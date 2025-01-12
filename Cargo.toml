@@ -1,0 +1,6 @@
+[workspace]
+members = [
+    "codem-core",
+    "codem-client"
+]
+resolver = "2"
