@@ -1,58 +1,12 @@
-use std::collections::HashMap;
 use std::path::PathBuf;
 use std::time::SystemTime;
 
+// File operations types
 #[derive(Debug, Clone)]
 pub struct FileMetadata {
     pub modified: SystemTime,
     pub size: u64,
     pub line_count: Option<usize>,
-}
-
-#[derive(Debug, Clone, Default)]
-pub struct CommandConfig {
-    pub cwd: Option<PathBuf>,
-    pub env: Option<HashMap<String, String>>,
-    pub timeout: Option<std::time::Duration>,
-}
-
-#[derive(Debug, Clone, Default)]
-pub struct CommandOutput {
-    pub stdout: String,
-    pub stderr: String,
-    pub exit_code: i32,
-}
-
-#[derive(Debug, Clone, Default)]
-pub struct ListOptions {
-    pub recursive: bool,
-    pub count_lines: bool,
-    pub file_pattern: Option<String>,
-}
-
-#[derive(Debug, Clone)]
-pub struct ListEntry {
-    pub path: PathBuf,
-    pub is_dir: bool,
-    pub symlink: Option<PathBuf>,
-    pub stats: Option<FileMetadata>,
-}
-
-#[derive(Debug, Clone)]
-pub struct FileMatch {
-    pub path: PathBuf,
-    pub line_number: usize,
-    pub line_content: String,
-    pub match_start: usize,
-    pub match_end: usize,
-}
-
-pub type GrepMatch = FileMatch;
-
-#[derive(Debug, Clone, Default)]
-pub struct GrepOptions {
-    pub include_hidden: bool,
-    pub file_pattern: Option<String>,
 }
 
 #[derive(Debug)]
@@ -79,7 +33,7 @@ pub struct PartialWriteInner {
 pub struct WriteResult {
     pub line_count: usize,
     pub size: usize,
-    pub partial_write_result: Option<PartialWriteResult>
+    pub partial_write_result: Option<PartialWriteResult>,
 }
 
 #[derive(Debug)]
@@ -94,4 +48,84 @@ pub struct PartialWriteResultContent {
     pub line_number_start: usize,
     pub line_number_end: usize,
     pub context: String,
+}
+
+#[derive(Debug)]
+pub struct MatchInfo {
+    pub pattern_index: usize,
+    pub relative_match_start: usize,
+}
+
+#[derive(Debug)]
+pub struct PatternInfo {
+    /// Byte size difference between old_str and new_str
+    pub size_diff: isize,
+    /// Number of lines in new_str
+    pub line_count: usize,
+}
+
+// Command types
+#[derive(Debug, Clone)]
+pub struct CommandOutput {
+    pub stdout: String,
+    pub stderr: String,
+    pub exit_code: i32,
+}
+
+// Directory types
+#[derive(Debug, Default, Clone)]
+pub struct ListOptions {
+    pub include_size: bool,
+    pub include_modified: bool,
+    pub include_type: bool,
+    pub file_pattern: Option<String>,
+    pub recursive: bool,
+    pub count_lines: bool,
+}
+
+#[derive(Debug)]
+pub struct ListEntry {
+    pub path: PathBuf,
+    pub size: Option<u64>,
+    pub modified: Option<SystemTime>,
+    pub entry_type: Option<String>,
+    pub is_dir: bool,
+    pub symlink: bool,
+    pub stats: Option<FileMetadata>,
+}
+
+impl Default for ListEntry {
+    fn default() -> Self {
+        Self {
+            path: PathBuf::new(),
+            size: None,
+            modified: None,
+            entry_type: None,
+            is_dir: false,
+            symlink: false,
+            stats: None,
+        }
+    }
+}
+
+// Grep types
+#[derive(Debug, Clone, Default)]
+pub struct GrepOptions {
+    pub pattern: String,
+    pub case_sensitive: bool,
+    pub context_before: usize,
+    pub context_after: usize,
+    pub file_pattern: Option<String>,
+}
+
+#[derive(Debug, Default)]
+pub struct GrepMatch {
+    pub path: PathBuf,
+    pub line_number: usize,
+    pub line_content: String,
+    pub match_start: usize,
+    pub match_end: usize,
+    pub line: String,
+    pub context_before: Vec<String>,
+    pub context_after: Vec<String>,
 }
