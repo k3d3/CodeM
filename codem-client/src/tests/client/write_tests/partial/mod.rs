@@ -1,2 +1,2 @@
-mod happy_path;
 mod error_cases;
+mod happy_path;

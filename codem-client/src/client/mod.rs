@@ -1,66 +1,80 @@
+mod grep;
 mod read;
 mod write;
-mod grep;
 
-use crate::error::Result;
-use crate::types::{Session, SessionId};
+use crate::{
+    error::{ClientError, LoadError},
+    project::Projects,
+    session::{Session, SessionId, Sessions},
+};
+use codem_core::types::{ListEntry, ListOptions};
+use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
-use tokio::sync::RwLock;
+use tokio::sync::MutexGuard;
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ClientConfig {
+    projects: Projects,
+    session_persist_path: PathBuf,
+}
 
 pub struct Client {
-    allowed_dirs: Vec<PathBuf>,
-    sessions: RwLock<Vec<Session>>,
+    sessions: Sessions,
 }
 
 impl Client {
     /// Create a new Client instance
-    pub fn new(allowed_dirs: Vec<PathBuf>) -> Result<Self> {
+    pub async fn new(config_path: &Path) -> Result<Self, ClientError> {
+        let config = Self::load_config(config_path).await?;
+        let projects = config.projects;
+        let persist_path = config.session_persist_path;
+
         Ok(Self {
-            allowed_dirs,
-            sessions: RwLock::new(Vec::new()),
+            sessions: Sessions::new(projects, persist_path).await?,
         })
     }
 
     /// Create a new session
-    pub async fn create_session(&self, project_name: &str) -> Result<SessionId> {
-        let session = Session::new(project_name.to_string(), self.allowed_dirs.clone());
-        let session_id = session.id().clone();
-        
-        let mut sessions = self.sessions.write().await;
-        sessions.push(session);
-        
-        Ok(session_id)
+    pub async fn create_session(&mut self, project_name: &str) -> Result<SessionId, ClientError> {
+        let session = self.sessions.create_session(project_name).await?;
+        Ok(session)
     }
 
-    /// List allowed paths
-    pub fn list_allowed_paths(&self) -> Vec<PathBuf> {
-        self.allowed_dirs.clone()
+    /// List contents of a directory with optional filtering and stats
+    pub async fn list_directory(
+        &self,
+        session_id: &SessionId,
+        path: &Path,
+        options: &ListOptions,
+    ) -> Result<Vec<ListEntry>, ClientError> {
+        let session = self.get_session(session_id).await?;
+
+        // Check if path is allowed
+        if !session.path_allowed(path.as_ref()) {
+            return Err(ClientError::PathNotAllowed);
+        }
+
+        let base_path = session.get_base_path();
+
+        let entries = codem_core::list_directory(base_path, path, options).await?;
+
+        Ok(entries)
     }
 
-    /// Check if a path is allowed by verifying it is under one of the allowed directories
-    pub(crate) fn is_path_allowed(&self, path: &Path) -> bool {
-        let normalized = match path.canonicalize() {
-            Ok(p) => p,
-            Err(_) => {
-                // If the path doesn't exist, check its parent directory
-                match path.parent().and_then(|p| p.canonicalize().ok()) {
-                    Some(parent) => parent,
-                    None => return false,
-                }
-            }
-        };
-
-        self.allowed_dirs.iter().any(|allowed| {
-            match allowed.canonicalize() {
-                Ok(allowed_canon) => normalized.starts_with(allowed_canon),
-                Err(_) => false,
-            }
-        })
+    async fn get_session(
+        &self,
+        session_id: &SessionId,
+    ) -> Result<MutexGuard<Session>, ClientError> {
+        self.sessions
+            .get(session_id)
+            .await
+            .ok_or(ClientError::SessionNotFound)
     }
 
-    #[cfg(test)]
-    /// Get all active sessions (for testing)
-    pub(crate) async fn get_sessions(&self) -> Vec<Session> {
-        self.sessions.read().await.clone()
+    async fn load_config(config_path: &Path) -> Result<ClientConfig, LoadError> {
+        let contents = std::fs::read_to_string(config_path)?;
+        let config: ClientConfig = toml::from_str(&contents)?;
+
+        Ok(config)
     }
 }

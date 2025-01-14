@@ -3,14 +3,19 @@ use crate::{
     types::{file_ops::FileMatch, ListOptions, SessionId},
     Client,
 };
-use std::{future::Future, path::Path, pin::Pin};
 use regex::Regex;
+use std::{future::Future, path::Path, pin::Pin};
 
 impl Client {
     /// Search for a pattern in a single file
-    pub async fn grep_file(&self, _session_id: &SessionId, path: &Path, pattern: &str) -> Result<Vec<FileMatch>> {
+    pub async fn grep_file(
+        &self,
+        _session_id: &SessionId,
+        path: &Path,
+        pattern: &str,
+    ) -> Result<Vec<FileMatch>> {
         let regex = Regex::new(pattern).map_err(|e| FileError::InvalidPattern(e.to_string()))?;
-        
+
         if !self.is_path_allowed(path) {
             return Err(FileError::PathNotAllowed);
         }
@@ -33,7 +38,7 @@ impl Client {
 
     /// Search for a pattern across multiple files
     pub async fn grep_codebase(
-        &self, 
+        &self,
         session_id: &SessionId,
         root: &Path,
         pattern: &str,
@@ -53,7 +58,7 @@ fn _grep_codebase<'a>(
 ) -> Pin<Box<dyn Future<Output = Result<Vec<FileMatch>>> + 'a>> {
     Box::pin(async move {
         let _regex = Regex::new(pattern).map_err(|e| FileError::InvalidPattern(e.to_string()))?;
-        
+
         let mut matches = Vec::new();
 
         if !client.is_path_allowed(root) {

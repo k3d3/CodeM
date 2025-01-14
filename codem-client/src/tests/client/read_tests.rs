@@ -1,6 +1,6 @@
-use tempfile::TempDir;
+use crate::{types::ListOptions, Client};
 use rstest::rstest;
-use crate::{Client, types::ListOptions};
+use tempfile::TempDir;
 
 #[rstest]
 #[tokio::test]
@@ -14,9 +14,8 @@ async fn test_read_file() {
     let client = Client::new(vec![temp_path.to_path_buf()]).unwrap();
     let session_id = client.create_session("test").await.unwrap();
 
-    let result = client.read_file(&session_id, &file_path, true).await.unwrap();
+    let result = client.read(&session_id, &file_path).await.unwrap();
     assert_eq!(result.content, "test content\nline 2\nline 3");
-    assert!(result.metadata.is_some());
 }
 
 #[rstest]
@@ -31,7 +30,10 @@ async fn test_grep_file() {
     let client = Client::new(vec![temp_path.to_path_buf()]).unwrap();
     let session_id = client.create_session("test").await.unwrap();
 
-    let matches = client.grep_file(&session_id, &file_path, "test").await.unwrap();
+    let matches = client
+        .grep_file(&session_id, &file_path, "test")
+        .await
+        .unwrap();
     assert_eq!(matches.len(), 2);
     assert_eq!(matches[0].content, "test content");
     assert_eq!(matches[1].content, "test content");
@@ -56,7 +58,10 @@ async fn test_list_directory_with_options() {
         pattern: Some("*.txt".to_string()),
     };
 
-    let entries = client.list_directory(&session_id, temp_path, &options).await.unwrap();
+    let entries = client
+        .list_directory(&session_id, temp_path, &options)
+        .await
+        .unwrap();
     assert_eq!(entries.len(), 1);
     assert_eq!(entries[0].path.file_name().unwrap(), "test1.txt");
     assert!(entries[0].stats.is_some());
