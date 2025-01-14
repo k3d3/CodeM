@@ -5,7 +5,7 @@ use std::path::Path;
 
 use crate::types::{GrepMatch, GrepOptions};
 
-pub fn grep_file(path: impl AsRef<Path>, pattern: &Regex) -> io::Result<Vec<GrepMatch>> {
+pub fn grep_file(path: impl AsRef<Path>, pattern: &Regex, options: &GrepOptions) -> io::Result<Vec<GrepMatch>> {
     let mut content = String::new();
     fs::File::open(&path)?.read_to_string(&mut content)?;
 
@@ -14,13 +14,15 @@ pub fn grep_file(path: impl AsRef<Path>, pattern: &Regex) -> io::Result<Vec<Grep
 
     for (line_num, line) in lines.iter().enumerate() {
         for cap in pattern.find_iter(line) {
-            let mut grep_match = GrepMatch::default();
-            grep_match.path = path.as_ref().to_path_buf();
-            grep_match.line_number = line_num + 1;
-            grep_match.line_content = line.to_string();
-            grep_match.line = line.to_string();
-            grep_match.match_start = cap.start();
-            grep_match.match_end = cap.end();
+            let mut grep_match = GrepMatch {
+                path: path.as_ref().to_path_buf(),
+                line_number: line_num + 1,
+                line_content: line.to_string(),
+                line: line.to_string(),
+                match_start: cap.start(),
+                match_end: cap.end(),
+                ..Default::default()
+            };
 
             // Add context
             let line_num = line_num as i64;
@@ -29,7 +31,7 @@ pub fn grep_file(path: impl AsRef<Path>, pattern: &Regex) -> io::Result<Vec<Grep
                 .enumerate()
                 .filter(|(i, _)| {
                     let i = *i as i64;
-                    i >= line_num - 3 && i < line_num
+                    i >= line_num - options.context_before as i64 && i < line_num
                 })
                 .map(|(_, l)| l.to_string())
                 .collect();
@@ -39,7 +41,7 @@ pub fn grep_file(path: impl AsRef<Path>, pattern: &Regex) -> io::Result<Vec<Grep
                 .enumerate()
                 .filter(|(i, _)| {
                     let i = *i as i64;
-                    i > line_num && i <= line_num + 3
+                    i > line_num && i <= line_num + options.context_after as i64
                 })
                 .map(|(_, l)| l.to_string())
                 .collect();
@@ -76,7 +78,7 @@ pub fn grep_codebase(
                     continue;
                 }
             }
-            matches.extend(grep_file(entry.path(), pattern)?);
+            matches.extend(grep_file(entry.path(), pattern, &options)?);
         }
     }
 

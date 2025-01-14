@@ -11,7 +11,7 @@ async fn test_grep_file() -> anyhow::Result<()> {
     fs::write(&file, "line one\nline two\nline three")?;
 
     let pattern = Regex::new("line").unwrap();
-    let matches = grep_file(&file, &pattern)?;
+    let matches = grep_file(&file, &pattern, &GrepOptions::default())?;
 
     assert_eq!(matches.len(), 3);
     assert_eq!(matches[0].line_number, 1);

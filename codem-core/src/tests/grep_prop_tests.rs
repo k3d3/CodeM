@@ -63,7 +63,7 @@ proptest! {
         fs::write(&file, &content).unwrap();
 
         let pattern = Regex::new("target").unwrap();
-        if let Ok(matches) = grep_file(&file, &pattern) {
+        if let Ok(matches) = grep_file(&file, &pattern, &GrepOptions::default()) {
             for grep_match in matches {
                 // Match positions should be within line bounds
                 prop_assert!(grep_match.match_start < grep_match.line.len());
@@ -104,7 +104,12 @@ proptest! {
         fs::write(&file, &content).unwrap();
 
         let pattern = Regex::new("target").unwrap();
-        if let Ok(matches) = grep_file(&file, &pattern) {
+        let options = GrepOptions {
+            context_before: content_before,
+            context_after: content_after,
+            ..Default::default()
+        };
+        if let Ok(matches) = grep_file(&file, &pattern, &options) {
             let content_lines: Vec<&str> = content.lines().collect();
             
             for grep_match in matches {
