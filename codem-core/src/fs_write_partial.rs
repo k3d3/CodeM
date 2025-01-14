@@ -10,7 +10,7 @@ pub async fn process_partial_write(
     path: &Path,
     partial_writes: PartialWrite,
 ) -> Result<WriteResult, WriteError> {
-    let ac = AhoCorasick::new(partial_writes.writes.iter().map(|pw| pw.old_str.as_bytes()))?;
+    let ac = AhoCorasick::new(partial_writes.changes.iter().map(|pw| pw.old_str.as_bytes()))?;
     let contents = fs::read_to_string(path).await?;
     let lines: Vec<&str> = contents.lines().collect();
 
@@ -44,7 +44,7 @@ pub async fn process_partial_write(
     for match_info in &matches {
         let pattern_index = match_info.pattern_index;
         let relative_match_start = match_info.relative_match_start;
-        let write = &partial_writes.writes[pattern_index];
+        let write = &partial_writes.changes[pattern_index];
 
         // Write text before match
         let preceding_text = &contents[last_match_end_position..last_match_end_position + relative_match_start];

@@ -19,11 +19,11 @@ pub enum WriteOperation {
 pub struct PartialWrite {
     pub context_lines: usize,
     pub return_full_content: bool,
-    pub writes: Vec<PartialWriteInner>,
+    pub changes: Vec<Change>,
 }
 
 #[derive(Debug)]
-pub struct PartialWriteInner {
+pub struct Change {
     pub old_str: String,
     pub new_str: String,
     pub allow_multiple_matches: bool,

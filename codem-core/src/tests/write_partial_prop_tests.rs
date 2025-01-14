@@ -2,7 +2,7 @@ use proptest::prelude::*;
 use tempfile::NamedTempFile;
 use tokio::fs;
 
-use crate::types::{PartialWrite, PartialWriteInner};
+use crate::types::{PartialWrite, Change};
 use crate::fs_write_partial::process_partial_write;
 
 fn text_strategy() -> impl Strategy<Value = String> {
@@ -26,7 +26,7 @@ proptest! {
             fs::write(&temp_file, &content).await.unwrap();
 
             let partial_write = PartialWrite {
-                writes: vec![PartialWriteInner { 
+                changes: vec![Change { 
                     old_str, 
                     new_str,
                     allow_multiple_matches: false 
@@ -67,7 +67,7 @@ proptest! {
             fs::write(&temp_file, &content).await.unwrap();
 
             let partial_write = PartialWrite {
-                writes: vec![PartialWriteInner { old_str, new_str: new_str.clone(), allow_multiple_matches: false }],
+                changes: vec![Change { old_str, new_str: new_str.clone(), allow_multiple_matches: false }],
                 context_lines: 3,
                 return_full_content: true,
             };
@@ -100,7 +100,7 @@ proptest! {
             fs::write(&temp_file, &content).await.unwrap();
 
             let partial_write = PartialWrite {
-                writes: vec![PartialWriteInner { old_str: old_str.clone(), new_str, allow_multiple_matches: false }],
+                changes: vec![Change { old_str: old_str.clone(), new_str, allow_multiple_matches: false }],
                 context_lines,
                 return_full_content: true,
             };

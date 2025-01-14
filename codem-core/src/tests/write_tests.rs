@@ -1,6 +1,6 @@
 use crate::{
     fs_ops::*,
-    types::{PartialWrite, PartialWriteInner, WriteOperation},
+    types::{PartialWrite, Change, WriteOperation},
 };
 use rstest::rstest;
 use tempfile::TempDir;
@@ -47,7 +47,7 @@ fn test_partial_write_matches(
         let write_op = WriteOperation::Partial(PartialWrite {
             context_lines: 1,
             return_full_content: true,
-            writes: vec![PartialWriteInner {
+            changes: vec![Change {
                 old_str: old_str.to_string(),
                 new_str: new_str.to_string(),
                 allow_multiple_matches: true,
@@ -86,7 +86,7 @@ fn test_partial_write_context(
         let write_op = WriteOperation::Partial(PartialWrite {
             context_lines,
             return_full_content: true,
-            writes: vec![PartialWriteInner {
+            changes: vec![Change {
                 old_str: old_str.to_string(),
                 new_str: new_str.to_string(),
                 allow_multiple_matches: false,
@@ -124,7 +124,7 @@ fn test_partial_write_multiple_matches(
         let write_op = WriteOperation::Partial(PartialWrite {
             context_lines,
             return_full_content: true,
-            writes: vec![PartialWriteInner {
+            changes: vec![Change {
                 old_str: old_str.to_string(),
                 new_str: new_str.to_string(),
                 allow_multiple_matches: true,
@@ -160,7 +160,7 @@ fn test_partial_write_multiline_replacements(
         let write_op = WriteOperation::Partial(PartialWrite {
             context_lines: 1,
             return_full_content: true,
-            writes: vec![PartialWriteInner {
+            changes: vec![Change {
                 old_str: old_str.to_string(),
                 new_str: new_str.to_string(),
                 allow_multiple_matches: true,
@@ -182,13 +182,13 @@ fn test_partial_write_multiple_patterns() {
         let write_op = WriteOperation::Partial(PartialWrite {
             context_lines: 1,
             return_full_content: true,
-            writes: vec![
-                PartialWriteInner {
+            changes: vec![
+                Change {
                     old_str: "hello".to_string(),
                     new_str: "hi".to_string(),
                     allow_multiple_matches: true,
                 },
-                PartialWriteInner {
+                Change {
                     old_str: "world".to_string(),
                     new_str: "earth".to_string(),
                     allow_multiple_matches: true,
