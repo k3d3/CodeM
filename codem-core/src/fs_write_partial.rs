@@ -1,5 +1,5 @@
 use crate::types::{
-    MatchInfo, PartialWrite, PartialWriteResult, PartialWriteResultContent, WriteResult,
+    MatchInfo, PartialWrite, PartialWriteResult, ChangeResult, WriteResult,
 };
 use crate::WriteError;
 use aho_corasick::AhoCorasick;
@@ -89,7 +89,7 @@ pub async fn process_partial_write(
         output.push_str(&write.new_str);
         let new_lines = write.new_str.chars().filter(|&c| c == '\n').count();
 
-        matches_out.push(PartialWriteResultContent {
+        matches_out.push(ChangeResult {
             partial_write_index: pattern_index,
             line_number_start: line_num + 1,
             line_number_end: line_num + 1 + new_lines,
@@ -109,7 +109,7 @@ pub async fn process_partial_write(
         line_count: output.lines().count(),
         size: output.len(),
         partial_write_result: Some(PartialWriteResult {
-            content: matches_out,
+            change_results: matches_out,
             full_content: if partial_writes.return_full_content {
                 Some(output)
             } else {

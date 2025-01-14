@@ -38,12 +38,12 @@ pub struct WriteResult {
 
 #[derive(Debug)]
 pub struct PartialWriteResult {
-    pub content: Vec<PartialWriteResultContent>,
+    pub change_results: Vec<ChangeResult>,
     pub full_content: Option<String>,
 }
 
 #[derive(Debug)]
-pub struct PartialWriteResultContent {
+pub struct ChangeResult {
     pub partial_write_index: usize,
     pub line_number_start: usize,
     pub line_number_end: usize,
@@ -54,14 +54,6 @@ pub struct PartialWriteResultContent {
 pub struct MatchInfo {
     pub pattern_index: usize,
     pub relative_match_start: usize,
-}
-
-#[derive(Debug)]
-pub struct PatternInfo {
-    /// Byte size difference between old_str and new_str
-    pub size_diff: isize,
-    /// Number of lines in new_str
-    pub line_count: usize,
 }
 
 // Command types

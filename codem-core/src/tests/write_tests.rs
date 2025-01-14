@@ -57,7 +57,7 @@ fn test_partial_write_matches(
         let result = write_file(&test_file, write_op, None).await.unwrap();
         
         if let Some(partial_result) = result.partial_write_result {
-            assert_eq!(partial_result.content.len(), expected_matches);
+            assert_eq!(partial_result.change_results.len(), expected_matches);
         } else {
             assert_eq!(expected_matches, 0);
         }
@@ -96,7 +96,7 @@ fn test_partial_write_context(
         let result = write_file(&test_file, write_op, None).await.unwrap();
         
         if let Some(partial_result) = result.partial_write_result {
-            assert_eq!(partial_result.content[0].context, expected_context);
+            assert_eq!(partial_result.change_results[0].context, expected_context);
         } else {
             panic!("Expected partial write result");
         }
@@ -134,9 +134,9 @@ fn test_partial_write_multiple_matches(
         let result = write_file(&test_file, write_op, None).await.unwrap();
         
         if let Some(partial_result) = result.partial_write_result {
-            assert_eq!(partial_result.content.len(), 2, "Expected exactly two matches");
-            assert_eq!(partial_result.content[0].context, expected_context_1);
-            assert_eq!(partial_result.content[1].context, expected_context_2);
+            assert_eq!(partial_result.change_results.len(), 2, "Expected exactly two matches");
+            assert_eq!(partial_result.change_results[0].context, expected_context_1);
+            assert_eq!(partial_result.change_results[1].context, expected_context_2);
         } else {
             panic!("Expected partial write result");
         }

@@ -74,7 +74,7 @@ proptest! {
 
             if let Ok(result) = process_partial_write(temp_file.path(), partial_write).await {
                 if let Some(partial_result) = result.partial_write_result {
-                    for write_result in partial_result.content {
+                    for write_result in partial_result.change_results {
                         // Line numbers should be valid
                         prop_assert!(write_result.line_number_start > 0);
                         prop_assert!(write_result.line_number_end >= write_result.line_number_start);
@@ -107,7 +107,7 @@ proptest! {
 
             if let Ok(result) = process_partial_write(temp_file.path(), partial_write).await {
                 if let Some(partial_result) = result.partial_write_result {
-                    for write_result in partial_result.content {
+                    for write_result in partial_result.change_results {
                         // Count context lines
                         let context_line_count = write_result.context.lines().count();
                         
