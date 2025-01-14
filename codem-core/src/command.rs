@@ -3,8 +3,8 @@ use std::process::{Command, Stdio};
 use std::time::Duration;
 use wait_timeout::ChildExt;
 
-use crate::error::CommandError;
 use crate::types::CommandOutput;
+use crate::CommandError;
 
 pub fn run_command(
     command: &str,
@@ -58,15 +58,6 @@ pub fn run_command(
             exit_code: output.status.code().unwrap_or(-1),
         }
     };
-
-    if output.exit_code != 0 {
-        return Err(CommandError::Failed {
-            exit_code: output.exit_code,
-            stdout: output.stdout.clone(),
-            stderr: output.stderr.clone(),
-            output,
-        });
-    }
 
     Ok(output)
 }

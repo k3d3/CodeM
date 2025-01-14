@@ -1,5 +1,5 @@
-use std::path::{Path, PathBuf};
 use std::fs;
+use std::path::{Path, PathBuf};
 
 pub struct PathValidator {
     allowed_dirs: Vec<PathBuf>,
@@ -34,8 +34,8 @@ impl PathValidator {
     }
 
     pub fn is_under_allowed(&self, path: &Path) -> bool {
-        self.allowed_dirs.iter().any(|allowed_dir| {
-            path.starts_with(allowed_dir)
-        })
+        self.allowed_dirs
+            .iter()
+            .any(|allowed_dir| path.starts_with(allowed_dir))
     }
 }

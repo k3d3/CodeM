@@ -1,14 +1,11 @@
+use regex::Regex;
 use std::fs;
 use std::io::{self, Read};
 use std::path::Path;
-use regex::Regex;
 
 use crate::types::{GrepMatch, GrepOptions};
 
-pub fn grep_file(
-    path: impl AsRef<Path>,
-    pattern: &Regex,
-) -> io::Result<Vec<GrepMatch>> {
+pub fn grep_file(path: impl AsRef<Path>, pattern: &Regex) -> io::Result<Vec<GrepMatch>> {
     let mut content = String::new();
     fs::File::open(&path)?.read_to_string(&mut content)?;
 
@@ -46,8 +43,11 @@ pub fn grep_codebase(
             if let Some(file_pattern) = &options.file_pattern {
                 let file_name = entry.file_name();
                 let file_name_str = file_name.to_string_lossy();
-                
-                if !glob::Pattern::new(file_pattern).unwrap().matches(&file_name_str) {
+
+                if !glob::Pattern::new(file_pattern)
+                    .unwrap()
+                    .matches(&file_name_str)
+                {
                     continue;
                 }
             }

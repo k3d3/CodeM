@@ -1,18 +1,16 @@
-use tempfile::TempDir;
 use crate::command::run_command;
+use tempfile::TempDir;
 
 #[tokio::test]
 async fn test_command_timeout() -> anyhow::Result<()> {
-    let result = run_command(
-        "sleep",
-        &["2"],
-        None,
-        Some(100)
-    );
+    let result = run_command("sleep", &["2"], None, Some(100));
 
     assert!(matches!(
         result,
-        Err(crate::error::CommandError::Timeout { timeout_ms: 100, .. })
+        Err(crate::error::CommandError::Timeout {
+            timeout_ms: 100,
+            ..
+        })
     ));
 
     Ok(())
@@ -20,18 +18,9 @@ async fn test_command_timeout() -> anyhow::Result<()> {
 
 #[tokio::test]
 async fn test_command_fails() -> anyhow::Result<()> {
-    let result = run_command(
-        "ls",
-        &["nonexistent_file"],
-        None,
-        None
-    );
+    let result = run_command("ls", &["nonexistent_file"], None, None).unwrap();
 
-    assert!(matches!(
-        result,
-        Err(crate::error::CommandError::Failed { exit_code, .. })
-        if exit_code != 0
-    ));
+    assert!(result.exit_code != 0);
 
     Ok(())
 }
@@ -40,14 +29,9 @@ async fn test_command_fails() -> anyhow::Result<()> {
 async fn test_command_with_cwd() -> anyhow::Result<()> {
     let temp = TempDir::new()?;
     let path = temp.path().to_path_buf();
-    
+
     // On Linux, pwd writes to stdout, on Windows, cd writes to stderr
-    let result = run_command(
-        "pwd",
-        &[],
-        Some(&path),
-        None
-    )?;
+    let result = run_command("pwd", &[], Some(&path), None)?;
 
     let actual = result.stdout.trim();
     let path_str = temp.path().to_string_lossy();

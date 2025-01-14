@@ -1,8 +1,8 @@
-use std::fs;
-use regex::Regex;
-use tempfile::TempDir;
-use crate::grep::{grep_file, grep_codebase};
+use crate::grep::{grep_codebase, grep_file};
 use crate::types::GrepOptions;
+use regex::Regex;
+use std::fs;
+use tempfile::TempDir;
 
 #[tokio::test]
 async fn test_grep_file() -> anyhow::Result<()> {
@@ -37,7 +37,7 @@ async fn test_grep_codebase() -> anyhow::Result<()> {
         GrepOptions {
             file_pattern: Some("*.txt".into()),
             ..Default::default()
-        }
+        },
     )?;
 
     assert_eq!(matches.len(), 3);
