@@ -8,3 +8,5 @@ mod fs_tests;
 mod grep_tests;
 #[cfg(test)]
 mod write_tests;
+#[cfg(test)]
+mod write_partial_prop_tests;
