@@ -13,25 +13,15 @@ impl CodeClient {
     pub fn new() -> Result<Self, Error>;
 
     /// Start a new session for a project
-    pub async fn run_on_project(&self, project_name: &str) -> Result<String, SessionError>;
+    pub async fn create_session(&self, project_name: &str) -> Result<String, SessionError>;
 
-    /// Write partial file with optional post-modification commands
-    pub async fn write_partial(
-        &self,
-        session_id: &str,
-        path: &Path,
-        old_str: &str,
-        new_str: &str,
-        opts: WriteOptions,
-    ) -> Result<WriteResult, WritePartialError>;
-
-    /// Write full file with optional post-modification commands
+    /// Write to a file using the specified mode
     pub async fn write_full(
         &self,
-        session_id: &str,
+        session_id: &SessionId,
         path: &Path,
-        content: &str,
-        opts: WriteOptions,
+        opteration: WriteOperation,
+        opts: CheckOptions,
     ) -> Result<WriteResult, WriteFullError>;
 
     /// Read file
