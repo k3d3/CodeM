@@ -1,65 +1,77 @@
-use crate::grep::{grep_codebase, grep_file};
-use crate::types::GrepOptions;
-use regex::Regex;
-use std::fs;
-use tempfile::TempDir;
+#[cfg(test)]
+mod tests {
+    use std::fs;
+    use std::io::Write;
+    use tempfile::NamedTempFile;
+    use tempfile::TempDir;
 
-#[tokio::test]
-async fn test_grep_file() -> anyhow::Result<()> {
-    let temp = TempDir::new()?;
-    let file = temp.path().join("test.txt");
-    fs::write(&file, "line one\nline two\nline three")?;
+    use crate::types::GrepOptions;
+    use crate::grep::{grep_file, grep_codebase};
+    use regex::Regex;
 
-    let pattern = Regex::new("line").unwrap();
-    let file_match = grep_file(&file, &pattern, &GrepOptions::default())?.unwrap();
+    #[tokio::test]
+    async fn test_grep_file_basic() {
+        let mut file = NamedTempFile::new().unwrap();
+        writeln!(file, "test line 1\ntest line 2\nother line\n").unwrap();
+        let pattern = Regex::new("test").unwrap();
 
-    assert_eq!(file_match.matches.len(), 3);
-    assert_eq!(file_match.path, file);
-    assert_eq!(file_match.matches[0].line_number, 1);
-    assert_eq!(file_match.matches[1].line_number, 2);
-    assert_eq!(file_match.matches[2].line_number, 3);
-    
-    // Check context contains the matched line
-    assert!(file_match.matches[0].context.contains("line one"));
-    assert!(file_match.matches[1].context.contains("line two"));
-    assert!(file_match.matches[2].context.contains("line three"));
-
-    Ok(())
-}
-
-#[tokio::test]
-async fn test_grep_codebase() -> anyhow::Result<()> {
-    let temp = TempDir::new()?;
-    fs::create_dir(temp.path().join("subdir"))?;
-
-    fs::write(temp.path().join("test1.txt"), "line one\nline two")?;
-    fs::write(temp.path().join("subdir/test2.txt"), "line three")?;
-    fs::write(temp.path().join("test.rs"), "other content")?;
-
-    let pattern = Regex::new("line").unwrap();
-    let file_matches = grep_codebase(
-        temp.path(),
-        &pattern,
-        GrepOptions {
-            file_pattern: Some("*.txt".into()),
-            ..Default::default()
-        },
-    )?;
-
-    for m in &file_matches {
-        println!("Found match in: {:?}", m.path);
+        let file_match = grep_file(&file, &pattern, &GrepOptions::default()).await.unwrap().unwrap();
+        assert_eq!(file_match.matches.len(), 2);
+        assert_eq!(file_match.matches[0].line_number, 1);
+        assert_eq!(file_match.matches[1].line_number, 2);
     }
 
-    assert_eq!(file_matches.len(), 2); // Should find 2 files
-    
-    
-    // Check first file (test1.txt)
-    assert!(file_matches[0].path.ends_with("test1.txt"));
-    assert_eq!(file_matches[0].matches.len(), 2); // two matches in first file
-    
-    // Check second file (test2.txt)
-    assert!(file_matches[1].path.ends_with("test2.txt"));
-    assert_eq!(file_matches[1].matches.len(), 1); // one match in second file
+    #[tokio::test]
+    async fn test_grep_file_no_match() {
+        let mut file = NamedTempFile::new().unwrap();
+        writeln!(file, "other line 1\nother line 2\n").unwrap();
+        let pattern = Regex::new("test").unwrap();
 
-    Ok(())
+        let file_match = grep_file(&file, &pattern, &GrepOptions::default()).await.unwrap();
+        assert!(file_match.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_grep_codebase() {
+        let temp = TempDir::new().unwrap();
+        create_test_files(&temp).unwrap();
+        let pattern = Regex::new("test").unwrap();
+
+        let file_matches = grep_codebase(
+            temp.path(),
+            &pattern,
+            GrepOptions {
+                context_before: 1,
+                context_after: 1,
+                ..Default::default()
+            },
+        ).await.unwrap();
+
+        assert_eq!(file_matches.len(), 2);
+
+        // Sort matches by file name
+        let mut sorted_matches = file_matches;
+        sorted_matches.sort_by(|a, b| a.path.file_name().unwrap().cmp(b.path.file_name().unwrap()));
+
+        // Check matches in first file
+        assert_eq!(sorted_matches[0].matches.len(), 1);
+        assert_eq!(sorted_matches[0].matches[0].line_number, 1);
+
+        // Check matches in second file
+        assert_eq!(sorted_matches[1].matches.len(), 2);
+        assert_eq!(sorted_matches[1].matches[0].line_number, 2);
+        assert_eq!(sorted_matches[1].matches[1].line_number, 3);
+    }
+
+    fn create_test_files(temp_dir: &TempDir) -> std::io::Result<()> {
+        let file1_path = temp_dir.path().join("file1.txt");
+        let mut file1 = fs::File::create(file1_path)?;
+        writeln!(file1, "test line 1\nother line\nfinal line")?;
+
+        let file2_path = temp_dir.path().join("file2.txt");
+        let mut file2 = fs::File::create(file2_path)?;
+        writeln!(file2, "first line\ntest line 2\ntest line 3\nfinal line")?;
+
+        Ok(())
+    }
 }

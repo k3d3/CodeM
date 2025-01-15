@@ -1,12 +1,13 @@
-use regex::Regex;
-use std::fs;
-use std::io;
 use std::path::Path;
+use futures::stream::{FuturesUnordered, StreamExt};
+use regex::Regex;
+use tokio::fs;
+use tokio::io;
 
 use crate::types::{GrepMatch, GrepFileMatch, GrepOptions};
 
-pub fn grep_file(path: impl AsRef<Path>, pattern: &Regex, options: &GrepOptions) -> io::Result<Option<GrepFileMatch>> {
-    let content = fs::read_to_string(&path)?;
+pub async fn grep_file(path: impl AsRef<Path>, pattern: &Regex, options: &GrepOptions) -> io::Result<Option<GrepFileMatch>> {
+    let content = fs::read_to_string(path.as_ref()).await?;
     let lines: Vec<&str> = content.lines().collect();
     let mut matches = Vec::new();
 
@@ -34,52 +35,79 @@ pub fn grep_file(path: impl AsRef<Path>, pattern: &Regex, options: &GrepOptions)
     }
 }
 
-pub fn grep_codebase(
+pub async fn grep_codebase(
     root: impl AsRef<Path>,
     pattern: &Regex,
     options: GrepOptions,
 ) -> io::Result<Vec<GrepFileMatch>> {
-    let mut file_matches = Vec::new();
     let mut files = Vec::new();
     let mut dirs = Vec::new();
     
-    // Collect all entries first, separating files and directories
-    for entry in fs::read_dir(root)? {
-        let entry = entry?;
-        if entry.file_type()?.is_file() {
-            files.push(entry);
-        } else if entry.file_type()?.is_dir() {
-            dirs.push(entry);
+    // Collect all entries first
+    let mut read_dir = fs::read_dir(root).await?;
+    while let Some(entry) = read_dir.next_entry().await? {
+        if entry.file_type().await?.is_file() {
+            files.push(entry.path());
+        } else if entry.file_type().await?.is_dir() {
+            dirs.push(entry.path());
         }
     }
     
-    // Sort files and directories by file name
-    files.sort_by_key(|a| a.file_name());
-    dirs.sort_by_key(|a| a.file_name());
+    // Sort for consistent ordering
+    files.sort();
+    dirs.sort();
     
-    // Process files in current directory
-    for entry in &files {
-        if let Some(file_pattern) = &options.file_pattern {
-            let file_name = entry.file_name();
-            let file_name_str = file_name.to_string_lossy();
+    // Filter files based on pattern
+    let filtered_files: Vec<_> = files.into_iter()
+        .filter(|path| {
+            if let Some(file_pattern) = &options.file_pattern {
+                let file_name = path.file_name()
+                    .map(|f| f.to_string_lossy())
+                    .unwrap_or_default();
+                
+                glob::Pattern::new(file_pattern)
+                    .map(|p| p.matches(&file_name))
+                    .unwrap_or(false)
+            } else {
+                true
+            }
+        })
+        .collect();
 
-            if !glob::Pattern::new(file_pattern)
-                .unwrap()
-                .matches(&file_name_str)
-            {
-                continue;
+    let mut matches = Vec::new();
+    let max_concurrent = num_cpus::get();
+
+    // Process files concurrently with bounded concurrency
+    let mut file_futures = FuturesUnordered::new();
+    for path in filtered_files {
+        if file_futures.len() >= max_concurrent {
+            if let Some(Ok(Some(result))) = file_futures.next().await {
+                matches.push(result);
             }
         }
-        
-        if let Some(file_match) = grep_file(entry.path(), pattern, &options)? {
-            file_matches.push(file_match);
+        file_futures.push(grep_file(path, pattern, &options));
+    }
+
+    // Finish remaining file futures
+    while let Some(Ok(Some(result))) = file_futures.next().await {
+        matches.push(result);
+    }
+
+    // Process directories concurrently with bounded concurrency
+    let mut dir_futures = FuturesUnordered::new();
+    for path in dirs {
+        if dir_futures.len() >= max_concurrent {
+            if let Some(Ok(dir_matches)) = dir_futures.next().await {
+                matches.extend(dir_matches);
+            }
         }
+        dir_futures.push(grep_codebase(path, pattern, options.clone()));
     }
 
-    // Process subdirectories
-    for entry in &dirs {
-        file_matches.extend(grep_codebase(entry.path(), pattern, options.clone())?);
+    // Finish remaining directory futures
+    while let Some(Ok(dir_matches)) = dir_futures.next().await {
+        matches.extend(dir_matches);
     }
 
-    Ok(file_matches)
+    Ok(matches)
 }
