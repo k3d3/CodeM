@@ -30,13 +30,11 @@ impl SessionManager {
     ) -> Result<SystemTime, ClientError> {
         let session = self.get_session(session_id)?;
 
-        if let Some(stored) = session.file_timestamps.get(path) {
-            Ok(*stored)
-        } else {
-            let metadata = path.metadata().map_err(OperationError::IoError)?;
-            let modified = metadata.modified().map_err(OperationError::IoError)?;
-            Ok(modified)
-        }
+        session.file_timestamps.get(path)
+            .copied()
+            .ok_or_else(|| OperationError::FileNotRead {
+                path: path.to_string_lossy().into_owned(),
+            }.into())
     }
 
     pub fn check_timestamp(&self, session_id: &str, path: &Path) -> Result<(), ClientError> {

@@ -11,6 +11,7 @@ impl Client {
         path: &Path,
     ) -> Result<String, ClientError> {
         self.sessions.check_path(session_id, path)?;
+        self.sessions.check_timestamp(session_id, path)?;
 
         let (contents, metadata) = codem_core::fs_read::read_file(path, Default::default()).await?;
         

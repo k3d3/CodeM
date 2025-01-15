@@ -1,6 +1,7 @@
 use aho_corasick::AhoCorasick;
 use crate::types::{MatchInfo, PartialWrite};
 use crate::WriteError;
+use std::collections::HashSet;
 
 pub fn find_matches(
     contents: &str,
@@ -21,19 +22,30 @@ pub fn find_matches(
         })
         .collect();
 
-    // Filter matches based on allow_multiple_matches
-    let mut filtered_matches = Vec::new();
-    let mut used_patterns = std::collections::HashSet::new();
+    // Get set of patterns that were matched
+    let matched_patterns: HashSet<_> = all_matches.iter()
+        .map(|m| m.pattern_index)
+        .collect();
 
-    for match_info in all_matches {
-        let pattern_index = match_info.pattern_index;
-        if !used_patterns.contains(&pattern_index) {
-            filtered_matches.push(match_info.clone());
-            if !partial_writes.changes[pattern_index].allow_multiple_matches {
-                used_patterns.insert(pattern_index);
-            }
+    // Check if any required pattern wasn't found
+    for i in 0..partial_writes.changes.len() {
+        if !matched_patterns.contains(&i) {
+            return Err(WriteError::StartPatternNotFound);
         }
     }
 
-    Ok(filtered_matches)
+    // Count matches per pattern
+    let mut match_counts = vec![0; partial_writes.changes.len()];
+    for match_info in &all_matches {
+        match_counts[match_info.pattern_index] += 1;
+    }
+
+    // Check for multiple matches that aren't allowed
+    for (i, count) in match_counts.iter().enumerate() {
+        if *count > 1 && !partial_writes.changes[i].allow_multiple_matches {
+            return Err(WriteError::MultiplePatternMatches { index: i });
+        }
+    }
+
+    Ok(all_matches)
 }
