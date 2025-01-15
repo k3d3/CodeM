@@ -1,42 +1,53 @@
-pub mod checks;
-pub mod operations;
-
 use std::path::Path;
-use std::sync::Arc;
+use codem_core::types::{WriteOperation, WriteResult, PartialWrite, Change};
+use crate::{Client, error::ClientError};
 
-use crate::{
-    error::ClientError,
-    session::SessionManager,
-    types::file_ops::{WriteOperation, WriteResultWithChecks},
-    project::Project,
-};
-
-pub(super) struct WriteClient {
-    sessions: Arc<SessionManager>,
-}
-
-impl WriteClient {
-    pub fn new(sessions: Arc<SessionManager>) -> Self {
-        Self { sessions }
-    }
-
+impl Client {
     pub async fn write_file(
         &self,
         session_id: &str,
         path: &Path,
-        operation: WriteOperation,
-    ) -> Result<WriteResultWithChecks, ClientError> {
-        let project = self.sessions.get_project(session_id)?;
-        let write_result = operations::handle_operation(path, operation).await?;
-        
-        let mut result = WriteResultWithChecks {
-            line_count: write_result.line_count,
-            size: write_result.size,
-            details: write_result.details,
-            check_results: vec![],
+        contents: String,
+    ) -> Result<WriteResult, ClientError> {
+        self.sessions.check_path(session_id, path)?;
+        let timestamp = self.sessions.get_timestamp(session_id, path)?;
+
+        let result = codem_core::fs_write::write_file(
+            path,
+            WriteOperation::Full(contents),
+            Some(timestamp)
+        ).await?;
+
+        let metadata = path.metadata()?;
+        self.sessions.update_timestamp(session_id, path, metadata.modified()?)?;
+
+        Ok(result)
+    }
+
+    pub async fn write_file_partial(
+        &self,
+        session_id: &str,
+        path: &Path,
+        changes: Vec<Change>,
+    ) -> Result<WriteResult, ClientError> {
+        self.sessions.check_path(session_id, path)?;
+        let timestamp = self.sessions.get_timestamp(session_id, path)?;
+
+        let partial = PartialWrite {
+            context_lines: 3,
+            return_full_content: true,
+            changes,
         };
 
-        checks::run_checks(&mut result, &project, path).await?;
+        let result = codem_core::fs_write::write_file(
+            path,
+            WriteOperation::Partial(partial),
+            Some(timestamp)
+        ).await?;
+
+        let metadata = path.metadata()?;
+        self.sessions.update_timestamp(session_id, path, metadata.modified()?)?;
+
         Ok(result)
     }
 }

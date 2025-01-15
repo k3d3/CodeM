@@ -66,6 +66,12 @@ error_set! {
     };
 }
 
+impl From<WriteError> for ClientError {
+    fn from(err: WriteError) -> Self {
+        Self::from(OperationError::from(err))
+    }
+}
+
 impl From<WriteError> for OperationError {
     fn from(err: WriteError) -> Self {
         match err {

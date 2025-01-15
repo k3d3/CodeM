@@ -11,7 +11,7 @@ use codem_core::{
 };
 
 pub(super) async fn grep_matches(
-    session_id: &SessionId,
+    _session_id: &SessionId,
     path: &Path,
     pattern: &str,
 ) -> Result<Vec<GrepMatch>, ClientError> {

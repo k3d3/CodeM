@@ -49,7 +49,7 @@ impl SessionManager {
     }
 
     pub async fn create_session(&self, project_name: &str) -> Result<SessionId, ClientError> {
-        let project = self.projects.get(project_name).ok_or_else(|| {
+        let _project = self.projects.get(project_name).ok_or_else(|| {
             SessionError::SessionNotFound { 
                 id: project_name.to_string() 
             }
@@ -138,6 +138,17 @@ impl SessionManager {
         }
         
         Ok(())
+    }
+
+    pub fn get_timestamp(&self, session_id: &str, path: &Path) -> Result<std::time::SystemTime, ClientError> {
+        let session = self.get_session(session_id)?;
+        
+        if let Some(stored) = session.file_timestamps.get(path) {
+            Ok(*stored)
+        } else {
+            let metadata = path.metadata().map_err(|e| OperationError::IoError(e))?;
+            metadata.modified().map_err(|e| OperationError::IoError(e).into())
+        }
     }
 
     pub fn check_timestamp(&self, session_id: &str, path: &Path) -> Result<(), ClientError> {
