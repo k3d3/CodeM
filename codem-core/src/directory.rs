@@ -1,5 +1,4 @@
-use crate::types::FileMetadata;
-use crate::types::{ListOptions, ListEntry};
+use crate::types::{FileMetadata, ListOptions, TreeEntry};
 use tokio::fs;
 use tokio::io::{self, AsyncBufReadExt};
 use std::path::Path;
@@ -8,8 +7,11 @@ pub async fn list_directory(
     base_path: &Path,
     path: &Path,
     options: &ListOptions,
-) -> io::Result<Vec<ListEntry>> {
-    let mut entries = Vec::new();
+) -> io::Result<TreeEntry> {
+    let mut root = TreeEntry::default();
+    root.entry.path = path.strip_prefix(base_path).unwrap_or(path).to_path_buf();
+    root.entry.is_dir = true;
+    root.entry.entry_type = Some("directory".to_string());
 
     let file_pattern_regex = options.file_pattern.as_ref().map(|pattern| {
         regex::Regex::new(pattern).unwrap()
@@ -28,58 +30,58 @@ pub async fn list_directory(
         let is_symlink = file_type.is_symlink();
 
         if file_type.is_dir() {
-            if options.recursive {
-                let mut subdir_entries = Box::pin(list_directory(base_path, &entry_path, options)).await?;
-                entries.append(&mut subdir_entries);
-            }
-
-            if matches && !options.recursive {
-                let mut entry = ListEntry::default();
-                entry.path = relative_path.to_path_buf();
-                entry.is_dir = true;
-                entry.symlink = is_symlink;
+            if matches || options.recursive {
+                let mut node = TreeEntry::default();
+                node.entry.path = relative_path.to_path_buf();
+                node.entry.is_dir = true;
+                node.entry.symlink = is_symlink;
 
                 if options.include_modified {
                     if let Ok(metadata) = fs::metadata(&entry_path).await {
-                        entry.modified = metadata.modified().ok();
+                        node.entry.modified = metadata.modified().ok();
                     }
                 }
 
                 if options.include_type {
-                    entry.entry_type = Some("directory".to_string());
+                    node.entry.entry_type = Some("directory".to_string());
                 }
 
-                entries.push(entry);
+                if options.recursive {
+                    let subdir_entry = Box::pin(list_directory(base_path, &entry_path, options)).await?;
+                    node.children = subdir_entry.children;
+                }
+
+                root.children.push(node);
             }
         } else if file_type.is_file() {
             if matches {
-                let mut entry = ListEntry::default();
-                entry.path = relative_path.to_path_buf();
-                entry.is_dir = false;
-                entry.symlink = is_symlink;
+                let mut node = TreeEntry::default();
+                node.entry.path = relative_path.to_path_buf();
+                node.entry.is_dir = false;
+                node.entry.symlink = is_symlink;
 
                 if options.include_type {
-                    entry.entry_type = Some("file".to_string());
+                    node.entry.entry_type = Some("file".to_string());
                 }
 
                 if options.include_size || options.include_modified || options.count_lines {
                     if let Ok(stats) = get_stats(&entry_path, options.count_lines).await {
                         if options.include_size {
-                            entry.size = Some(stats.size);
+                            node.entry.size = Some(stats.size);
                         }
                         if options.include_modified {
-                            entry.modified = Some(stats.modified);
+                            node.entry.modified = Some(stats.modified);
                         }
-                        entry.stats = Some(stats);
+                        node.entry.stats = Some(stats);
                     }
                 }
 
-                entries.push(entry);
+                root.children.push(node);
             }
         }
     }
 
-    Ok(entries)
+    Ok(root)
 }
 
 async fn get_stats(path: &Path, count_lines: bool) -> io::Result<FileMetadata> {

@@ -1,5 +1,108 @@
 use std::path::PathBuf;
 use std::time::SystemTime;
+use std::slice::{Iter, IterMut};
+use std::ops::{Index, IndexMut};
+
+#[derive(Debug, Clone)]
+pub struct TreeEntry {
+    pub entry: ListEntry,
+    pub children: Vec<TreeEntry>,
+}
+
+impl TreeEntry {
+    pub fn iter(&self) -> Iter<'_, TreeEntry> {
+        self.children.iter()
+    }
+
+    pub fn iter_mut(&mut self) -> IterMut<'_, TreeEntry> {
+        self.children.iter_mut()
+    }
+
+    pub fn len(&self) -> usize {
+        self.children.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.children.is_empty()
+    }
+
+    // Convenience accessors for common fields
+    pub fn path(&self) -> &PathBuf {
+        &self.entry.path
+    }
+
+    pub fn is_dir(&self) -> bool {
+        self.entry.is_dir
+    }
+
+    pub fn size(&self) -> Option<u64> {
+        self.entry.size
+    }
+
+    pub fn stats(&self) -> Option<&FileMetadata> {
+        self.entry.stats.as_ref()
+    }
+
+    pub fn entry_type(&self) -> Option<&String> {
+        self.entry.entry_type.as_ref()
+    }
+}
+
+impl Index<usize> for TreeEntry {
+    type Output = TreeEntry;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.children[index]
+    }
+}
+
+impl IndexMut<usize> for TreeEntry {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        &mut self.children[index]
+    }
+}
+
+impl<'a> IntoIterator for &'a TreeEntry {
+    type Item = &'a TreeEntry;
+    type IntoIter = Iter<'a, TreeEntry>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.children.iter()
+    }
+}
+
+impl<'a> IntoIterator for &'a mut TreeEntry {
+    type Item = &'a mut TreeEntry;
+    type IntoIter = IterMut<'a, TreeEntry>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.children.iter_mut()
+    }
+}
+
+impl IntoIterator for TreeEntry {
+    type Item = TreeEntry;
+    type IntoIter = std::vec::IntoIter<TreeEntry>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.children.into_iter()
+    }
+}
+
+impl AsRef<TreeEntry> for TreeEntry {
+    fn as_ref(&self) -> &TreeEntry {
+        self
+    }
+}
+
+impl Default for TreeEntry {
+    fn default() -> Self {
+        Self {
+            entry: ListEntry::default(),
+            children: Vec::new(),
+        }
+    }
+}
 
 // File operations types
 #[derive(Debug, Clone)]
@@ -75,7 +178,7 @@ pub struct ListOptions {
     pub count_lines: bool,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ListEntry {
     pub path: PathBuf,
     pub size: Option<u64>,

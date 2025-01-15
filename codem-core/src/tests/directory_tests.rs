@@ -4,7 +4,7 @@ use std::fs;
 use tempfile::TempDir;
 
 #[tokio::test]
-async fn test_list_directory() {
+async fn test_list_directory_children() {
     let temp = TempDir::new().unwrap();
 
     fs::write(temp.path().join("file1.txt"), "content1").unwrap();
@@ -31,7 +31,7 @@ async fn test_list_directory_pattern() {
     ).await.unwrap();
 
     assert_eq!(entries.len(), 1);
-    assert_eq!(entries[0].path.to_string_lossy(), "file1.txt");
+    assert_eq!(entries[0].path().to_string_lossy(), "file1.txt");
 }
 
 #[tokio::test]
@@ -51,7 +51,16 @@ async fn test_list_directory_recursive() {
         },
     ).await.unwrap();
 
-    dbg!(&entries);
-
     assert_eq!(entries.len(), 2);
+
+    // Should have one file and one directory
+    let files: Vec<_> = entries.iter().filter(|e| !e.is_dir()).collect();
+    let dirs: Vec<_> = entries.iter().filter(|e| e.is_dir()).collect();
+
+    assert_eq!(files.len(), 1);
+    assert_eq!(dirs.len(), 1);
+
+    // Check that the directory contains one file
+    assert_eq!(dirs[0].len(), 1);
+    assert_eq!(dirs[0][0].path().to_string_lossy(), "subdir/file2.txt");
 }
