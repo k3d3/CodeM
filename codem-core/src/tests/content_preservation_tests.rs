@@ -27,7 +27,7 @@ proptest! {
                 context_lines: 1,
             });
 
-            let result = write_file(&file_path, operation, None).await.unwrap();
+            let _result = write_file(&file_path, operation, None).await.unwrap();
             let final_content = fs::read_to_string(&file_path).await.unwrap();
 
             // Before content preserved

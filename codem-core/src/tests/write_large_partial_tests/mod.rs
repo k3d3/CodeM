@@ -1,3 +1,4 @@
-mod basic_tests;
-mod pattern_error_tests;
-mod duplicate_error_tests;
+pub mod basic_tests;
+pub mod duplicate_error_tests;
+pub mod pattern_error_tests;
+pub mod order_error_tests;

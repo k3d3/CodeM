@@ -1,4 +1,3 @@
-use std::collections::HashSet;
 use rstest::rstest;
 use tokio::fs;
 use crate::types::{PartialWriteLarge, WriteOperation};
@@ -51,30 +50,6 @@ async fn test_invalid_order(#[case] start: &str, #[case] end: &str, #[case] cont
 }
 
 #[rstest]
-#[case("PATTERN")]
-#[case("START_XYZ")]
-#[tokio::test]
-async fn test_duplicate_patterns(#[case] pattern: &str) {
-    let dir = TempDir::new().unwrap();
-    let file_path = dir.path().join("test.txt");
-
-    // Create content with two instances of pattern
-    let file_content = format!("{0}\nMIDDLE\n{0}\n", pattern);
-    fs::write(&file_path, &file_content).await.unwrap();
-
-    let operation = WriteOperation::PartialLarge(PartialWriteLarge {
-        start_str: format!("{}\n", pattern),
-        end_str: format!("{}\n", pattern),
-        new_str: "new\n".to_string(),
-        context_lines: 1,
-    });
-
-    // Should error due to multiple matches
-    let result = write_file(&file_path, operation, None).await;
-    assert!(matches!(result, Err(WriteError::MultipleStartPatternsFound)));
-}
-
-#[rstest]
 #[case("AZ", "Z")] // Nested pattern
 #[case("ABC", "BC")] // Overlapping patterns
 #[tokio::test]
@@ -113,7 +88,7 @@ async fn test_content_preservation() {
         context_lines: 1,
     });
 
-    let result = write_file(&file_path, operation, None).await.unwrap();
+    let _result = write_file(&file_path, operation, None).await.unwrap();
 
     // Verify final content
     let final_content = fs::read_to_string(&file_path).await.unwrap();

@@ -1,0 +1,8 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 5d8c81c715d40b2f76799c95e5d5dd0a954a73f86bf5a6ec9383cc51b9f3972c # shrinks to structure = [("/.txt", "\0")]
+cc 80bffaf57d1c8fa68022b9fb5596cb989a15c1b17f85919a54b32ace4097f28e # shrinks to structure = [("/.txt", " ")]
