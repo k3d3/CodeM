@@ -11,38 +11,31 @@ pub(super) async fn handle_operation(
 ) -> Result<WriteResult> {
     let mut result = WriteResult::default();
 
-    let current_content = match read_file(path, Default::default()) {
-        Ok((content, _)) => content,
-        Err(_) => String::new(),
-    };
+    let (current_content, _) = read_file(path, Default::default()).await?;
 
     // Always store original content
     result.original_content = Some(current_content.clone());
 
     match operation {
-        WriteOperation::Full(content) => match write_file(path, &content) {
-            Ok(_) => {
-                result.matches.push(FileMatch {
-                    path: path.to_path_buf(),
-                    line_number: 1,
-                    context: content.clone(),
-                });
-            }
-            Err(e) => {
-                return Err(e.into());
-            }
-        },
+        WriteOperation::Full(content) => {
+            write_file(path, WriteOperation::Full(content.clone()), None).await?;
+            result.matches.push(FileMatch {
+                path: path.to_path_buf(),
+                line_number: 1,
+                context: content,
+            });
+        }
         WriteOperation::Partial { old_str, new_str } => {
             // First find all occurrences of the pattern
             let matches: Vec<_> = current_content.match_indices(&old_str).collect();
             println!("Found matches: {:?}", matches);
 
             if matches.is_empty() {
-                return Err(FileError::PatternNotFound);
+                return Err(FileError::PatternNotFound.into());
             }
 
             if matches.len() > 1 {
-                return Err(FileError::MultipleMatches);
+                return Err(FileError::MultipleMatches.into());
             }
 
             // Create new content with replacement
@@ -53,18 +46,12 @@ pub(super) async fn handle_operation(
             let line_number = current_content[..first_match].lines().count() + 1;
 
             // Try write
-            match write_file(path, &new_content) {
-                Ok(_) => {
-                    result.matches.push(FileMatch {
-                        path: path.to_path_buf(),
-                        line_number,
-                        context: new_str.clone(),
-                    });
-                }
-                Err(e) => {
-                    return Err(e.into());
-                }
-            }
+            write_file(path, WriteOperation::Full(new_content), None).await?;
+            result.matches.push(FileMatch {
+                path: path.to_path_buf(),
+                line_number,
+                context: new_str,
+            });
         }
     }
 
