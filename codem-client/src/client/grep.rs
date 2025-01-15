@@ -14,8 +14,8 @@ impl Client {
     ) -> Result<Vec<FileMatch>> {
         let regex = Regex::new(pattern).map_err(|e| FileError::InvalidPattern { pattern: e.to_string() })?;
 
-        if !self.path_allowed(path) {
-            return Err(FileError::PathNotAllowed);
+        if !self.is_allowed_path(path) {
+            return Err(FileError::PathNotAllowed.into());
         }
 
         let file_match = codem_core::grep::grep_file(
@@ -26,7 +26,7 @@ impl Client {
                 context_after: 3,
                 ..Default::default()
             },
-        )?;
+        ).await?;
 
         Ok(file_match
             .map(|fm| {
@@ -45,30 +45,15 @@ impl Client {
     /// Search for a pattern across multiple files
     pub async fn grep_codebase(
         &self,
-        session_id: &SessionId,
+        _session_id: &SessionId,
         root: &Path,
         pattern: &str,
         options: &ListOptions,
     ) -> Result<Vec<FileMatch>> {
-        _grep_codebase(self, session_id, root, pattern, options).await
-    }
-}
-
-/// Implementation separated to avoid self-reference issues
-fn _grep_codebase<'a>(
-    client: &'a Client,
-    session_id: &'a SessionId,
-    root: &'a Path,
-    pattern: &'a str,
-    options: &'a ListOptions,
-) -> Pin<Box<dyn Future<Output = Result<Vec<FileMatch>>> + 'a>> {
-    Box::pin(async move {
         let regex = Regex::new(pattern).map_err(|e| FileError::InvalidPattern { pattern: e.to_string() })?;
 
-        let mut matches = Vec::new();
-
-        if !client.is_allowed_path(root) {
-            return Err(FileError::PathNotAllowed);
+        if !self.is_allowed_path(root) {
+            return Err(FileError::PathNotAllowed.into());
         }
 
         let file_matches = codem_core::grep::grep_codebase(
@@ -77,10 +62,10 @@ fn _grep_codebase<'a>(
             GrepOptions {
                 context_before: 3,
                 context_after: 3,
-                file_pattern: options.pattern.clone(),
+                file_pattern: options.file_pattern.clone(),
                 ..Default::default()
             },
-        )?;
+        ).await?;
 
         let mut matches = Vec::new();
         for fm in file_matches {
@@ -95,5 +80,5 @@ fn _grep_codebase<'a>(
             );
         }
         Ok(matches)
-    })
+    }
 }
