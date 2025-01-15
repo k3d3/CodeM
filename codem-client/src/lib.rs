@@ -1,12 +1,7 @@
-pub mod client;
-pub mod error;
-pub mod project;
-pub mod session;
-pub mod types;
+mod client;
+mod error;
+mod types;
 
 pub use client::Client;
-pub use error::{ClientError, OperationError, ProjectError, SessionError};
-pub use session::SessionId;
-
-#[cfg(test)]
-mod tests;
+pub use error::*;
+pub use types::*;

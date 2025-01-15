@@ -1,55 +1,80 @@
-pub mod read;
-pub mod write;
+mod grep;
 
-use std::path::{Path, PathBuf};
-use std::sync::Arc;
-use std::collections::HashMap;
-use tokio::fs;
+use std::path::Path;
+use crate::error::GrepError;
+use crate::types::*;
+use anyhow::Result;
 
-use serde::{Deserialize, Serialize};
-
-use crate::{
-    error::ClientError,
-    session::{SessionManager, SessionInfo},
-    project::Project,
-};
-
-#[derive(Serialize, Deserialize)]
-pub struct ClientConfig {
-    projects: Vec<Project>,
-    session_persist_path: Option<PathBuf>,
-}
-
+#[derive(Default)]
 pub struct Client {
-    sessions: Arc<SessionManager>,
+    // Add client fields as needed
 }
 
 impl Client {
-    pub async fn new(config_path: &Path) -> Result<Self, ClientError> {
-        let contents = fs::read_to_string(config_path)
-            .await
-            .map_err(ClientError::from)?;
-            
-        let config: ClientConfig = toml::from_str(&contents).map_err(ClientError::from)?;
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub async fn read_file(&self, _path: impl AsRef<Path>) -> Result<String> {
+        // TODO: Implement read_file
+        todo!()
+    }
+
+    pub async fn write_file(&self, _path: impl AsRef<Path>, _content: &str) -> Result<()> {
+        // TODO: Implement write_file  
+        todo!()
+    }
+
+    pub async fn grep_file(
+        &self, 
+        path: impl AsRef<Path>, 
+        pattern: &str
+    ) -> Result<Vec<GrepMatch>, GrepError> {
+        grep::grep_file(path, pattern).await
+    }
+
+    pub async fn grep_codebase(
+        &self,
+        root_dir: impl AsRef<Path>,
+        pattern: &str
+    ) -> Result<GrepResults, GrepError> {
+        grep::grep_codebase(root_dir, pattern).await
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rstest::*;
+    use tempfile::tempdir;
+    use std::fs;
+
+    #[rstest]
+    #[tokio::test]
+    async fn test_grep_integration() {
+        let client = Client::new();
+        let dir = tempdir().unwrap();
         
-        let projects: HashMap<String, Arc<Project>> = config.projects
-            .into_iter()
-            .map(|p| (p.name.clone(), Arc::new(p)))
-            .collect();
-            
-        let sessions = SessionManager::new(projects, config.session_persist_path);
+        // Create test files
+        fs::write(
+            dir.path().join("test.txt"),
+            "line one\nfind me\nline three"
+        ).unwrap();
 
-        Ok(Self {
-            sessions: Arc::new(sessions)
-        })
-    }
+        // Test grep_file
+        let matches = client.grep_file(
+            dir.path().join("test.txt"), 
+            "find"
+        ).await.unwrap();
+        assert_eq!(matches.len(), 1);
+        assert_eq!(matches[0].line, "find me");
+        assert_eq!(matches[0].line_number, 2);
 
-    pub async fn create_session(&self, project_name: &str) -> Result<String, ClientError> {
-        let session_id = self.sessions.create_session(project_name).await?;
-        Ok(session_id.as_str().to_string())
-    }
-
-    pub async fn get_sessions(&self) -> Vec<SessionInfo> {
-        self.sessions.list_sessions().await
+        // Test grep_codebase
+        let results = client.grep_codebase(dir.path(), "find").await.unwrap();
+        assert_eq!(results.matches.len(), 1);
+        assert_eq!(results.files_searched, 1);
+        assert_eq!(results.lines_searched, 3);
+        assert_eq!(results.pattern, "find");
     }
 }
