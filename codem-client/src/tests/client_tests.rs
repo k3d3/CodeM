@@ -1,15 +1,28 @@
-use std::time::Duration;
+use std::{path::PathBuf, time::Duration};
 use tokio;
 use tempfile::TempDir;
-use crate::Client;
+use crate::{Client, error::ClientError};
+use rstest::rstest;
+use serde_json::json;
 
+#[rstest]
 #[tokio::test]
-async fn test_read_file() -> anyhow::Result<()> {
-    let temp = TempDir::new()?;
+async fn test_read_file() -> Result<(), ClientError> {
+    let temp = TempDir::new().map_err(ClientError::from)?;
     let test_file = temp.path().join("test.txt");
-    std::fs::write(&test_file, "test content")?;
+    std::fs::write(&test_file, "test content").map_err(ClientError::from)?;
 
-    let client = Client::new(vec![temp.path().to_path_buf()])?;
+    // Create test config
+    let config_path = temp.path().join("config.toml");
+    let config = format!(
+        r#"[[projects]]
+        base_path = "{}"
+        name = "test""#, 
+        test_file.parent().unwrap().display()
+    );
+    std::fs::write(&config_path, config).map_err(ClientError::from)?;
+
+    let client = Client::new(&config_path).await?;
     let session_id = client.run_on_project("test").await?;
 
     let content = client.read(&session_id, &test_file).await?;
@@ -18,13 +31,23 @@ async fn test_read_file() -> anyhow::Result<()> {
     Ok(())
 }
 
+#[rstest]
 #[tokio::test]
-async fn test_read_timestamp_mismatch() -> anyhow::Result<()> {
-    let temp = TempDir::new()?;
+async fn test_read_timestamp_mismatch() -> Result<(), ClientError> {
+    let temp = TempDir::new().map_err(ClientError::from)?;
     let test_file = temp.path().join("test.txt");
-    std::fs::write(&test_file, "test content")?;
+    std::fs::write(&test_file, "test content").map_err(ClientError::from)?;
 
-    let client = Client::new(vec![temp.path().to_path_buf()])?;
+    let config_path = temp.path().join("config.toml");
+    let config = format!(
+        r#"[[projects]]
+        base_path = "{}"
+        name = "test""#,
+        test_file.parent().unwrap().display()
+    );
+    std::fs::write(&config_path, config).map_err(ClientError::from)?;
+
+    let client = Client::new(&config_path).await?;
     let session_id = client.run_on_project("test").await?;
 
     // First read establishes timestamp
@@ -34,7 +57,7 @@ async fn test_read_timestamp_mismatch() -> anyhow::Result<()> {
     tokio::time::sleep(Duration::from_secs(1)).await;
 
     // Modify file external to update timestamp
-    std::fs::write(&test_file, "modified content")?;
+    std::fs::write(&test_file, "modified content").map_err(ClientError::from)?;
 
     let result = client.read(&session_id, &test_file).await;
     assert!(result.is_err());
@@ -42,29 +65,51 @@ async fn test_read_timestamp_mismatch() -> anyhow::Result<()> {
     Ok(())
 }
 
+#[rstest]
 #[tokio::test]
-async fn test_read_disallowed_path() -> anyhow::Result<()> {
-    let temp = TempDir::new()?;
-    let client = Client::new(vec![temp.path().to_path_buf()])?;
+async fn test_read_disallowed_path() -> Result<(), ClientError> {
+    let temp = TempDir::new().map_err(ClientError::from)?;
+    let allowed_dir = temp.path().join("allowed");
+    std::fs::create_dir(&allowed_dir).map_err(ClientError::from)?;
 
+    let config_path = temp.path().join("config.toml");
+    let config = format!(
+        r#"[[projects]]
+        base_path = "{}"
+        name = "test""#,
+        allowed_dir.display()
+    );
+    std::fs::write(&config_path, config).map_err(ClientError::from)?;
+
+    let client = Client::new(&config_path).await?;
     let session_id = client.run_on_project("test").await?;
 
-    let test_file = tempfile::NamedTempFile::new()?;
-    std::fs::write(&test_file, "test content")?;
+    let outside_file = temp.path().join("outside.txt");
+    std::fs::write(&outside_file, "test content").map_err(ClientError::from)?;
 
-    let result = client.read(&session_id, test_file.path()).await;
+    let result = client.read(&session_id, &outside_file).await;
     assert!(result.is_err());
 
     Ok(())
 }
 
-#[tokio::test]
-async fn test_session_paths() -> anyhow::Result<()> {
-    let temp = TempDir::new()?;
+#[rstest]
+#[tokio::test] 
+async fn test_session_paths() -> Result<(), ClientError> {
+    let temp = TempDir::new().map_err(ClientError::from)?;
     let allowed_path = temp.path().join("allowed");
-    std::fs::create_dir(&allowed_path)?;
+    std::fs::create_dir(&allowed_path).map_err(ClientError::from)?;
 
-    let client = Client::new(vec![allowed_path.clone()])?;
+    let config_path = temp.path().join("config.toml");
+    let config = format!(
+        r#"[[projects]]
+        base_path = "{}"
+        name = "test""#,
+        allowed_path.display()
+    );
+    std::fs::write(&config_path, config).map_err(ClientError::from)?;
+
+    let client = Client::new(&config_path).await?;
     let session_id = client.run_on_project("test").await?;
 
     let sessions = client.get_sessions().await;

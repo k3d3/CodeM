@@ -1,7 +1,7 @@
 pub mod file_ops;
-mod list;
-mod read_ops;
-mod session;
+pub mod read_ops;
+pub mod list;
+pub mod session;
 
-pub use file_ops::{CheckOptions, FileMatch, WriteMode, WriteOperation, WriteResult};
-pub use read_ops::ReadResult;
+pub use file_ops::{GrepMatch, WriteOperation, WriteResultWithChecks};
+pub use list::ListEntry;

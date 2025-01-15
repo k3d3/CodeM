@@ -1,80 +1,56 @@
-mod grep;
-mod read;
-mod write;
+pub mod grep;
+pub mod read;
+pub mod write;
+
+use std::path::{Path, PathBuf};
+use std::sync::Arc;
+use std::collections::HashMap;
+use tokio::fs;
+
+use serde::{Deserialize, Serialize};
 
 use crate::{
-    error::{ClientError, LoadError},
-    project::Projects,
-    session::{Session, SessionId, Sessions},
+    error::ClientError,
+    session::{SessionManager, SessionInfo},
+    project::Project,
 };
-use codem_core::types::{ListEntry, ListOptions};
-use serde::{Deserialize, Serialize};
-use std::path::{Path, PathBuf};
-use tokio::sync::MutexGuard;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Serialize, Deserialize)]
 pub struct ClientConfig {
-    projects: Projects,
-    session_persist_path: PathBuf,
+    projects: Vec<Project>,
+    session_persist_path: Option<PathBuf>,
 }
 
 pub struct Client {
-    sessions: Sessions,
+    sessions: Arc<SessionManager>,
 }
 
 impl Client {
-    /// Create a new Client instance
     pub async fn new(config_path: &Path) -> Result<Self, ClientError> {
-        let config = Self::load_config(config_path).await?;
-        let projects = config.projects;
-        let persist_path = config.session_persist_path;
+        let contents = fs::read_to_string(config_path)
+            .await
+            .map_err(ClientError::from)?;
+            
+        let config: ClientConfig = toml::from_str(&contents).map_err(ClientError::from)?;
+        
+        let projects: HashMap<String, Arc<Project>> = config.projects
+            .into_iter()
+            .map(|p| (p.name.clone(), Arc::new(p)))
+            .collect();
+            
+        let sessions = SessionManager::new(projects, config.session_persist_path);
 
         Ok(Self {
-            sessions: Sessions::new(projects, persist_path).await?,
+            sessions: Arc::new(sessions)
         })
     }
 
-    /// Create a new session
-    pub async fn create_session(&mut self, project_name: &str) -> Result<SessionId, ClientError> {
-        let session = self.sessions.create_session(project_name).await?;
-        Ok(session)
+    pub async fn run_on_project(&self, project_name: &str) -> Result<String, ClientError> {
+        let session_id = self.sessions.create_session(project_name).await?;
+        Ok(session_id.as_str().to_string())
     }
 
-    /// List contents of a directory with optional filtering and stats
-    pub async fn list_directory(
-        &self,
-        session_id: &SessionId,
-        path: &Path,
-        options: &ListOptions,
-    ) -> Result<Vec<ListEntry>, ClientError> {
-        let session = self.get_session(session_id).await?;
-
-        // Check if path is allowed
-        if !session.path_allowed(path.as_ref()) {
-            return Err(ClientError::PathNotAllowed);
-        }
-
-        let base_path = session.get_base_path();
-
-        let entries = codem_core::list_directory(base_path, path, options).await?;
-
-        Ok(entries)
-    }
-
-    async fn get_session(
-        &self,
-        session_id: &SessionId,
-    ) -> Result<MutexGuard<Session>, ClientError> {
-        self.sessions
-            .get(session_id)
-            .await
-            .ok_or(ClientError::SessionNotFound)
-    }
-
-    async fn load_config(config_path: &Path) -> Result<ClientConfig, LoadError> {
-        let contents = std::fs::read_to_string(config_path)?;
-        let config: ClientConfig = toml::from_str(&contents)?;
-
-        Ok(config)
+    pub async fn get_sessions(&self) -> Vec<SessionInfo> {
+        self.sessions.list_sessions().await
     }
 }

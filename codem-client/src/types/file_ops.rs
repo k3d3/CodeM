@@ -1,36 +1,38 @@
 use std::path::PathBuf;
-
-#[derive(Debug)]
-pub enum WriteMode {
-    Full,
-    Partial,
-}
+use codem_core::types::{
+    PartialWrite, PartialWriteLarge, WriteResult as CoreWriteResult,
+    WriteResultDetails as CoreWriteResultDetails,
+};
 
 #[derive(Debug)]
 pub enum WriteOperation {
     Full(String),
-    Partial { old_str: String, new_str: String },
-}
-
-#[derive(Debug, Default)]
-pub struct CheckOptions {
-    pub run_check: bool,
-    pub run_lint: bool,
-    pub run_test: bool,
+    Partial(PartialWrite),
+    PartialLarge(PartialWriteLarge),
 }
 
 #[derive(Debug)]
-pub struct FileMatch {
+pub struct WriteResultWithChecks {
+    pub line_count: usize,
+    pub size: usize,
+    pub details: CoreWriteResultDetails,
+    pub check_results: Vec<String>,
+}
+
+impl From<CoreWriteResult> for WriteResultWithChecks {
+    fn from(result: CoreWriteResult) -> Self {
+        Self {
+            line_count: result.line_count,
+            size: result.size,
+            details: result.details,
+            check_results: vec![],
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct GrepMatch {
     pub path: PathBuf,
     pub line_number: usize,
     pub context: String,
-}
-
-#[derive(Debug, Default)]
-pub struct WriteResult {
-    pub matches: Vec<FileMatch>,
-    pub check_output: Option<String>,
-    pub lint_output: Option<String>,
-    pub test_output: Option<String>,
-    pub original_content: Option<String>,
 }

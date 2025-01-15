@@ -1,53 +1,42 @@
-mod checks;
-mod operations;
+pub mod checks;
+pub mod operations;
 
-use super::Client;
-use crate::error::ClientError;
-use crate::session::SessionId;
-use crate::types::{CheckOptions, WriteOperation, WriteResult};
 use std::path::Path;
+use std::sync::Arc;
 
-use checks::run_checks;
-use operations::handle_operation;
+use crate::{
+    error::ClientError,
+    session::SessionManager,
+    types::file_ops::{WriteOperation, WriteResultWithChecks},
+    project::Project,
+};
 
-impl Client {
-    /// Write to a file using the specified mode
+pub(super) struct WriteClient {
+    sessions: Arc<SessionManager>,
+}
+
+impl WriteClient {
+    pub fn new(sessions: Arc<SessionManager>) -> Self {
+        Self { sessions }
+    }
+
     pub async fn write_file(
         &self,
-        session_id: &SessionId,
+        session_id: &str,
         path: &Path,
         operation: WriteOperation,
-        options: CheckOptions,
-    ) -> Result<WriteResult, ClientError> {
-        let mut session = self.get_session(session_id).await?;
+    ) -> Result<WriteResultWithChecks, ClientError> {
+        let project = self.sessions.get_project(session_id)?;
+        let write_result = operations::handle_operation(path, operation).await?;
+        
+        let mut result = WriteResultWithChecks {
+            line_count: write_result.line_count,
+            size: write_result.size,
+            details: write_result.details,
+            check_results: vec![],
+        };
 
-        // Check if path is allowed
-        if !session.path_allowed(path) {
-            return Err(ClientError::PathNotAllowed);
-        }
-
-        let timestamp = session.get_timestamp(path);
-
-        codem_core::write_file(path, operation, options).await?;
-
-        // let mut result = handle_operation(path, operation).await?;
-
-        // // Update timestamp after successful write
-        // if let Ok(metadata) = path.metadata() {
-        //     session.update_timestamp(path.to_path_buf(), metadata.modified()?);
-        // }
-
-        // // If write failed but we got original content, update timestamp
-        // if result.original_content.is_some() {
-        //     if let Ok(metadata) = path.metadata() {
-        //         session.update_timestamp(path.to_path_buf(), metadata.modified()?);
-        //     }
-        // }
-
-        // // Run checks if requested
-        // run_checks(&mut result, &options);
-
-        // Ok(result)
-        todo!()
+        checks::run_checks(&mut result, &project, path).await?;
+        Ok(result)
     }
 }

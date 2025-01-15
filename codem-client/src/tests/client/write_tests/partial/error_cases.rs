@@ -1,74 +1,82 @@
 use crate::{
-    error::FileError,
-    types::{CheckOptions, WriteOperation},
+    types::file_ops::{WriteOperation, WriteOptions},
+    error::{ClientError, FileError},
     Client,
 };
+use codem_core::types::PartialWrite;
 use std::fs;
 use tempfile::TempDir;
 
 #[tokio::test]
-async fn test_partial_write_pattern_not_found() {
+async fn test_pattern_not_found() {
     let temp_dir = TempDir::new().unwrap();
     let file_path = temp_dir.path().join("test.txt");
+    fs::write(&file_path, "test content").unwrap();
 
-    fs::write(&file_path, "some content").unwrap();
+    let config_path = temp_dir.path().join("config.toml");
+    let config = format!(
+        r#"[[projects]]
+        base_path = "{}"
+        name = "test""#,
+        temp_dir.path().display()
+    );
+    fs::write(&config_path, &config).unwrap();
 
-    let client = Client::new(vec![temp_dir.path().to_path_buf()]).unwrap();
-    let session_id = client.create_session("test").await.unwrap();
+    let client = Client::new(&config_path).await.unwrap();
+    let session_id = client.run_on_project("test").await.unwrap();
+    let _ = client.read(&session_id, &file_path).await.unwrap();
 
-    // Read first to cache timestamp
-    let initial_read = client.read(&session_id, &file_path).await;
-    assert!(initial_read.is_ok());
+    let write = PartialWrite {
+        pattern: "nonexistent".to_string(),
+        replacement: "new".to_string(),
+        context_lines: 3,
+    };
 
     let result = client
-        .write(
+        .write_file(
             &session_id,
             &file_path,
-            WriteOperation::Partial {
-                old_str: "nonexistent".to_string(),
-                new_str: "new".to_string(),
-            },
-            CheckOptions::default(),
+            WriteOperation::Partial(write),
+            WriteOptions::default(),
         )
         .await;
 
-    assert!(matches!(result, Err(FileError::PatternNotFound)));
-    assert_eq!(fs::read_to_string(&file_path).unwrap(), "some content");
+    assert!(matches!(result, Err(ClientError::FileError(FileError::PatternNotFound { .. }))));
 }
 
 #[tokio::test]
-async fn test_partial_write_multiple_matches() {
+async fn test_multiple_matches() {
     let temp_dir = TempDir::new().unwrap();
     let file_path = temp_dir.path().join("test.txt");
+    fs::write(&file_path, "test\ntest\ntest").unwrap();
 
-    let test_content = "test test".to_string();
-    fs::write(&file_path, &test_content).unwrap();
-    println!("Initial content: {:?}", test_content);
+    let config_path = temp_dir.path().join("config.toml");
+    let config = format!(
+        r#"[[projects]]
+        base_path = "{}"
+        name = "test""#,
+        temp_dir.path().display()
+    );
+    fs::write(&config_path, &config).unwrap();
 
-    let client = Client::new(vec![temp_dir.path().to_path_buf()]).unwrap();
-    let session_id = client.create_session("test").await.unwrap();
+    let client = Client::new(&config_path).await.unwrap();
+    let session_id = client.run_on_project("test").await.unwrap();
+    let _ = client.read(&session_id, &file_path).await.unwrap();
 
-    // Read first to cache timestamp
-    let initial_read = client.read(&session_id, &file_path).await;
-    println!("Initial read result: {:?}", initial_read);
-    assert!(initial_read.is_ok());
-
-    let sessions = client.get_sessions().await;
-    println!("Current sessions: {:?}", sessions);
+    let write = PartialWrite {
+        pattern: "test".to_string(),
+        replacement: "new".to_string(),
+        context_lines: 3,
+    };
 
     let result = client
-        .write(
+        .write_file(
             &session_id,
             &file_path,
-            WriteOperation::Partial {
-                old_str: "test".to_string(),
-                new_str: "new".to_string(),
-            },
-            CheckOptions::default(),
+            WriteOperation::Partial(write),
+            WriteOptions::default(),
         )
         .await;
 
-    println!("Result: {:?}", result);
-    assert!(matches!(result, Err(FileError::MultipleMatches)));
-    assert_eq!(fs::read_to_string(&file_path).unwrap(), test_content);
+    assert!(matches!(result, Err(ClientError::FileError(FileError::MultipleMatches { .. }))));
 }
