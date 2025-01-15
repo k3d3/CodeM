@@ -1,9 +1,9 @@
 use std::time::SystemTime;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct FileMetadata {
-    pub modified: SystemTime,
-    pub size: u64,
+    pub modified: Option<SystemTime>,
+    pub size: Option<u64>,
     pub line_count: Option<usize>,
 }
 

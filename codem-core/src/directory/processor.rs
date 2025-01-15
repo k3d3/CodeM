@@ -1,4 +1,4 @@
-use crate::types::{TreeEntry, ListOptions};
+use crate::types::{TreeEntry, ListOptions, FileMetadata};
 use super::stats::get_stats;
 use tokio::fs;
 use tokio::io;
@@ -32,6 +32,23 @@ pub async fn process_directory(
         if options.recursive {
             let subdir_entry = Box::pin(super::list::list_directory(base_path, entry_path, options)).await?;
             node.children = subdir_entry.children;
+            
+            // Total up line counts from children
+            if options.count_lines {
+                let mut total_lines = 0;
+                for child in &node.children {
+                    if let Some(stats) = &child.entry.stats {
+                        if let Some(lines) = stats.line_count {
+                            total_lines += lines;
+                        }
+                    }
+                }
+                node.entry.stats = Some(FileMetadata {
+                    line_count: Some(total_lines),
+                    size: None,
+                    modified: None,
+                });
+            }
         }
 
         root.children.push(node);
@@ -58,10 +75,10 @@ pub async fn process_file(
     if options.include_size || options.include_modified || options.count_lines {
         if let Ok(stats) = get_stats(entry_path, options.count_lines).await {
             if options.include_size {
-                node.entry.size = Some(stats.size);
+                node.entry.size = stats.size;
             }
             if options.include_modified {
-                node.entry.modified = Some(stats.modified);
+                node.entry.modified = stats.modified;
             }
             node.entry.stats = Some(stats);
         }

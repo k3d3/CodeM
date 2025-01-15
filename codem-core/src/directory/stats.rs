@@ -5,8 +5,8 @@ use std::path::Path;
 
 pub async fn get_stats(path: &Path, count_lines: bool) -> io::Result<FileMetadata> {
     let metadata = fs::metadata(path).await?;
-    let modified = metadata.modified().unwrap();
-    let size = metadata.len();
+    let modified = metadata.modified().ok();
+    let size = Some(metadata.len());
 
     let line_count = if count_lines {
         let file = fs::File::open(path).await?;
