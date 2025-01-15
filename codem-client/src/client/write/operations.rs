@@ -1,6 +1,8 @@
-use crate::error::{FileError, Result};
+use crate::error::FileError;
+use anyhow::Result;
 use crate::types::{file_ops::FileMatch, WriteOperation, WriteResult};
-use codem_core::{read_file, write_file};
+use codem_core::fs_read::read_file;
+use codem_core::fs_write::write_file;
 use std::path::Path;
 
 pub(super) async fn handle_operation(
@@ -23,7 +25,7 @@ pub(super) async fn handle_operation(
                 result.matches.push(FileMatch {
                     path: path.to_path_buf(),
                     line_number: 1,
-                    content: content.clone(),
+                    context: content.clone(),
                 });
             }
             Err(e) => {
@@ -56,7 +58,7 @@ pub(super) async fn handle_operation(
                     result.matches.push(FileMatch {
                         path: path.to_path_buf(),
                         line_number,
-                        content: new_str.clone(),
+                        context: new_str.clone(),
                     });
                 }
                 Err(e) => {

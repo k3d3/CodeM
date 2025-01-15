@@ -23,7 +23,7 @@ pub struct CheckOptions {
 pub struct FileMatch {
     pub path: PathBuf,
     pub line_number: usize,
-    pub content: String,
+    pub context: String,
 }
 
 #[derive(Debug, Default)]

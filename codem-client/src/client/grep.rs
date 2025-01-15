@@ -1,8 +1,6 @@
-use crate::{
-    error::{FileError, Result},
-    types::{file_ops::FileMatch, ListOptions, SessionId},
-    Client,
-};
+use crate::{error::FileError, session::SessionId, types::file_ops::FileMatch, Client};
+use anyhow::Result;
+use codem_core::types::{GrepOptions, ListOptions};
 use regex::Regex;
 use std::{future::Future, path::Path, pin::Pin};
 
@@ -14,26 +12,34 @@ impl Client {
         path: &Path,
         pattern: &str,
     ) -> Result<Vec<FileMatch>> {
-        let regex = Regex::new(pattern).map_err(|e| FileError::InvalidPattern(e.to_string()))?;
+        let regex = Regex::new(pattern).map_err(|e| FileError::InvalidPattern { pattern: e.to_string() })?;
 
-        if !self.is_path_allowed(path) {
+        if !self.path_allowed(path) {
             return Err(FileError::PathNotAllowed);
         }
 
-        let content = std::fs::read_to_string(path)?;
-        let mut matches = Vec::new();
+        let file_match = codem_core::grep::grep_file(
+            path,
+            &regex,
+            &GrepOptions {
+                context_before: 3,
+                context_after: 3,
+                ..Default::default()
+            },
+        )?;
 
-        for (line_number, line) in content.lines().enumerate() {
-            if regex.is_match(line) {
-                matches.push(FileMatch {
-                    path: path.to_path_buf(),
-                    line_number: line_number + 1,
-                    content: line.to_string(),
-                });
-            }
-        }
-
-        Ok(matches)
+        Ok(file_match
+            .map(|fm| {
+                fm.matches
+                    .into_iter()
+                    .map(|m| FileMatch {
+                        path: fm.path.clone(),
+                        line_number: m.line_number,
+                        context: m.context,
+                    })
+                    .collect::<Vec<_>>()
+            })
+            .unwrap_or_default())
     }
 
     /// Search for a pattern across multiple files
@@ -57,37 +63,37 @@ fn _grep_codebase<'a>(
     options: &'a ListOptions,
 ) -> Pin<Box<dyn Future<Output = Result<Vec<FileMatch>>> + 'a>> {
     Box::pin(async move {
-        let _regex = Regex::new(pattern).map_err(|e| FileError::InvalidPattern(e.to_string()))?;
+        let regex = Regex::new(pattern).map_err(|e| FileError::InvalidPattern { pattern: e.to_string() })?;
 
         let mut matches = Vec::new();
 
-        if !client.is_path_allowed(root) {
+        if !client.is_allowed_path(root) {
             return Err(FileError::PathNotAllowed);
         }
 
-        let entries = std::fs::read_dir(root)?;
+        let file_matches = codem_core::grep::grep_codebase(
+            root,
+            &regex,
+            GrepOptions {
+                context_before: 3,
+                context_after: 3,
+                file_pattern: options.pattern.clone(),
+                ..Default::default()
+            },
+        )?;
 
-        for entry in entries {
-            let entry = entry?;
-            let path = entry.path();
-            let is_dir = entry.file_type()?.is_dir();
-
-            if is_dir && options.recursive {
-                matches.extend(_grep_codebase(client, session_id, &path, pattern, options).await?);
-            } else if !is_dir {
-                if let Some(ref pattern) = options.pattern {
-                    if let Some(ext) = path.extension() {
-                        let ext_str = ext.to_string_lossy().to_string();
-                        if &ext_str != pattern.trim_start_matches('.') {
-                            continue;
-                        }
-                    }
-                }
-
-                matches.extend(client.grep_file(session_id, &path, pattern).await?);
-            }
+        let mut matches = Vec::new();
+        for fm in file_matches {
+            matches.extend(
+                fm.matches
+                    .into_iter()
+                    .map(|m| FileMatch {
+                        path: fm.path.clone(),
+                        line_number: m.line_number,
+                        context: m.context,
+                    }),
+            );
         }
-
         Ok(matches)
     })
 }
