@@ -53,47 +53,25 @@ fn file_name_strategy() -> impl Strategy<Value = String> {
 }
 
 proptest! {
-    #[test]
-    fn test_grep_match_positions(
-        content in text_strategy(0, 0)
-    ) {
+    #[test] fn test_grep_match_lines(content in text_strategy(0, 0)) {
         // Create temp file with content
         let temp = TempDir::new().unwrap();
         let file = temp.path().join("test.txt");
         fs::write(&file, &content).unwrap();
 
         let pattern = Regex::new("target").unwrap();
-        if let Ok(matches) = grep_file(&file, &pattern, &GrepOptions::default()) {
-            for grep_match in matches {
-                // Match positions should be within line bounds
-                prop_assert!(grep_match.match_start < grep_match.line.len());
-                prop_assert!(grep_match.match_end <= grep_match.line.len());
+        if let Ok(Some(file_match)) = grep_file(&file, &pattern, &GrepOptions::default()) {
+            for grep_match in &file_match.matches {
+                // Check that context contains target line
+                prop_assert!(grep_match.context.contains("target"));
                 
-                // Extract all values before the assertions to avoid moves
-                let line = grep_match.line.clone();
-                let line_content = grep_match.line_content.clone();
-                let matched_text = line[grep_match.match_start..grep_match.match_end].to_string();
-                
-                // Now do the assertions
-                prop_assert_eq!(&line, &line_content);
-                prop_assert_eq!(&matched_text, "target");
-
-                // Context lines shouldn't contain matches
-                for line in &grep_match.context_before {
-                    prop_assert!(!line.contains("target"));
-                }
-                for line in &grep_match.context_after {
-                    prop_assert!(!line.contains("target"));
-                }
+                // Line number should be greater than 0
+                prop_assert!(grep_match.line_number > 0);
             }
         }
     }
 
-    #[test]
-    fn test_grep_context_lines(
-        content_before in 0..5usize,
-        content_after in 0..5usize
-    ) {
+    #[test] fn test_grep_context_lines(content_before in 0..5usize, content_after in 0..5usize) {
         let content = text_strategy(content_before, content_after)
             .new_tree(&mut TestRunner::default())
             .unwrap()
@@ -109,55 +87,30 @@ proptest! {
             context_after: content_after,
             ..Default::default()
         };
-        if let Ok(matches) = grep_file(&file, &pattern, &options) {
+        if let Ok(Some(file_match)) = grep_file(&file, &pattern, &options) {
             let content_lines: Vec<&str> = content.lines().collect();
             
-            for grep_match in matches {
-                // Check line index and context bounds
+            for grep_match in &file_match.matches {
                 let line_idx = grep_match.line_number - 1;
-                let remaining_lines = content_lines.len().saturating_sub(line_idx + 1);
-                let max_context = remaining_lines.min(content_after);
-
-                // When no context is requested, there should be no context lines
-                if content_before == 0 {
-                    prop_assert_eq!(grep_match.context_before.len(), 0);
-                }
-                if content_after == 0 {
-                    prop_assert_eq!(grep_match.context_after.len(), 0);
-                    continue;
-                }
-
-                // Otherwise, check that context is within bounds
-                if content_before > 0 {
-                    prop_assert!(grep_match.context_before.len() <= content_before);
-                    let context_start = line_idx.saturating_sub(content_before);
-                    for (i, context_line) in grep_match.context_before.iter().enumerate() {
-                        prop_assert_eq!(context_line, content_lines[context_start + i]);
-                    }
-                }
-
-                if content_after > 0 {
-                    prop_assert!(grep_match.context_after.len() <= max_context);
-                    let after_start = line_idx + 1;
-                    if after_start < content_lines.len() {
-                        let after_end = content_lines.len().min(after_start + content_after);
-                        for (i, context_line) in grep_match.context_after.iter().enumerate() {
-                            if after_start + i < after_end {
-                                prop_assert_eq!(context_line, content_lines[after_start + i]);
-                            }
-                        }
-                    }
+                let possible_before = line_idx.min(content_before);
+                let possible_after = content_lines.len().saturating_sub(line_idx + 1).min(content_after);
+                
+                // Split context into lines for checking
+                let context_lines: Vec<&str> = grep_match.context.lines().collect();
+                
+                // Total context lines should be: before + matching line + after
+                prop_assert_eq!(context_lines.len(), possible_before + 1 + possible_after);
+                
+                // Verify each line matches the original content
+                let context_start = line_idx.saturating_sub(content_before);
+                for (i, context_line) in context_lines.iter().enumerate() {
+                    prop_assert_eq!(*context_line, content_lines[context_start + i]);
                 }
             }
         }
     }
 
-    #[test]
-    fn test_grep_codebase_structure(
-        file_count in 1..5usize,
-        dir_count in 1..3usize,
-        pattern in "[a-zA-Z]{1,10}"
-    ) {
+    #[test] fn test_grep_codebase_structure(file_count in 1..5usize, dir_count in 1..3usize, pattern in "[a-zA-Z]{1,10}") {
         let temp = TempDir::new().unwrap();
         
         // Create directory structure
@@ -204,20 +157,20 @@ proptest! {
         }
 
         let grep_pattern = Regex::new(&pattern).unwrap();
-        if let Ok(matches) = grep_codebase(
+        let file_matches = grep_codebase(
             temp.path(),
             &grep_pattern,
             GrepOptions {
                 file_pattern: Some("*.txt".into()),
                 ..Default::default()
             },
-        ) {
-            // All matches should be from .txt files
-            for grep_match in matches {
-                prop_assert_eq!(grep_match.path.extension().unwrap(), "txt");
-                // Path should be under temp directory
-                prop_assert!(grep_match.path.starts_with(temp.path()));
-            }
+        )?;
+        
+        // All matches should be from .txt files
+        for file_match in file_matches {
+            prop_assert_eq!(file_match.path.extension().unwrap(), "txt");
+            // Path should be under temp directory
+            prop_assert!(file_match.path.starts_with(temp.path()));
         }
     }
 }

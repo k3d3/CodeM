@@ -112,12 +112,12 @@ pub struct GrepOptions {
 
 #[derive(Debug, Default)]
 pub struct GrepMatch {
-    pub path: PathBuf,
     pub line_number: usize,
-    pub line_content: String,
-    pub match_start: usize,
-    pub match_end: usize,
-    pub line: String,
-    pub context_before: Vec<String>,
-    pub context_after: Vec<String>,
+    pub context: String,
+}
+
+#[derive(Debug, Default)]
+pub struct GrepFileMatch {
+    pub path: PathBuf,
+    pub matches: Vec<GrepMatch>,
 }

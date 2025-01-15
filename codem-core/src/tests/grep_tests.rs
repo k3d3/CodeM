@@ -11,12 +11,18 @@ async fn test_grep_file() -> anyhow::Result<()> {
     fs::write(&file, "line one\nline two\nline three")?;
 
     let pattern = Regex::new("line").unwrap();
-    let matches = grep_file(&file, &pattern, &GrepOptions::default())?;
+    let file_match = grep_file(&file, &pattern, &GrepOptions::default())?.unwrap();
 
-    assert_eq!(matches.len(), 3);
-    assert_eq!(matches[0].line_number, 1);
-    assert_eq!(matches[1].line_number, 2);
-    assert_eq!(matches[2].line_number, 3);
+    assert_eq!(file_match.matches.len(), 3);
+    assert_eq!(file_match.path, file);
+    assert_eq!(file_match.matches[0].line_number, 1);
+    assert_eq!(file_match.matches[1].line_number, 2);
+    assert_eq!(file_match.matches[2].line_number, 3);
+    
+    // Check context contains the matched line
+    assert!(file_match.matches[0].context.contains("line one"));
+    assert!(file_match.matches[1].context.contains("line two"));
+    assert!(file_match.matches[2].context.contains("line three"));
 
     Ok(())
 }
@@ -31,7 +37,7 @@ async fn test_grep_codebase() -> anyhow::Result<()> {
     fs::write(temp.path().join("test.rs"), "other content")?;
 
     let pattern = Regex::new("line").unwrap();
-    let matches = grep_codebase(
+    let file_matches = grep_codebase(
         temp.path(),
         &pattern,
         GrepOptions {
@@ -40,7 +46,20 @@ async fn test_grep_codebase() -> anyhow::Result<()> {
         },
     )?;
 
-    assert_eq!(matches.len(), 3);
+    for m in &file_matches {
+        println!("Found match in: {:?}", m.path);
+    }
+
+    assert_eq!(file_matches.len(), 2); // Should find 2 files
+    
+    
+    // Check first file (test1.txt)
+    assert!(file_matches[0].path.ends_with("test1.txt"));
+    assert_eq!(file_matches[0].matches.len(), 2); // two matches in first file
+    
+    // Check second file (test2.txt)
+    assert!(file_matches[1].path.ends_with("test2.txt"));
+    assert_eq!(file_matches[1].matches.len(), 1); // one match in second file
 
     Ok(())
 }

@@ -1,86 +1,85 @@
 use regex::Regex;
 use std::fs;
-use std::io::{self, Read};
+use std::io;
 use std::path::Path;
 
-use crate::types::{GrepMatch, GrepOptions};
+use crate::types::{GrepMatch, GrepFileMatch, GrepOptions};
 
-pub fn grep_file(path: impl AsRef<Path>, pattern: &Regex, options: &GrepOptions) -> io::Result<Vec<GrepMatch>> {
-    let mut content = String::new();
-    fs::File::open(&path)?.read_to_string(&mut content)?;
-
+pub fn grep_file(path: impl AsRef<Path>, pattern: &Regex, options: &GrepOptions) -> io::Result<Option<GrepFileMatch>> {
+    let content = fs::read_to_string(&path)?;
     let lines: Vec<&str> = content.lines().collect();
     let mut matches = Vec::new();
 
     for (line_num, line) in lines.iter().enumerate() {
-        for cap in pattern.find_iter(line) {
-            let mut grep_match = GrepMatch {
-                path: path.as_ref().to_path_buf(),
+        if pattern.is_match(line) {
+            // Build context string
+            let context_start = line_num.saturating_sub(options.context_before);
+            let context_end = usize::min(line_num + options.context_after + 1, lines.len());
+            let context = lines[context_start..context_end].join("\n");
+
+            matches.push(GrepMatch {
                 line_number: line_num + 1,
-                line_content: line.to_string(),
-                line: line.to_string(),
-                match_start: cap.start(),
-                match_end: cap.end(),
-                ..Default::default()
-            };
-
-            // Add context
-            let line_num = line_num as i64;
-            grep_match.context_before = lines
-                .iter()
-                .enumerate()
-                .filter(|(i, _)| {
-                    let i = *i as i64;
-                    i >= line_num - options.context_before as i64 && i < line_num
-                })
-                .map(|(_, l)| l.to_string())
-                .collect();
-
-            grep_match.context_after = lines
-                .iter()
-                .enumerate()
-                .filter(|(i, _)| {
-                    let i = *i as i64;
-                    i > line_num && i <= line_num + options.context_after as i64
-                })
-                .map(|(_, l)| l.to_string())
-                .collect();
-
-            matches.push(grep_match);
+                context,
+            });
         }
     }
 
-    Ok(matches)
+    if matches.is_empty() {
+        Ok(None)
+    } else {
+        Ok(Some(GrepFileMatch {
+            path: path.as_ref().to_path_buf(),
+            matches,
+        }))
+    }
 }
 
 pub fn grep_codebase(
     root: impl AsRef<Path>,
     pattern: &Regex,
     options: GrepOptions,
-) -> io::Result<Vec<GrepMatch>> {
-    let mut matches = Vec::new();
-
+) -> io::Result<Vec<GrepFileMatch>> {
+    let mut file_matches = Vec::new();
+    let mut files = Vec::new();
+    let mut dirs = Vec::new();
+    
+    // Collect all entries first, separating files and directories
     for entry in fs::read_dir(root)? {
         let entry = entry?;
-        let file_type = entry.file_type()?;
+        if entry.file_type()?.is_file() {
+            files.push(entry);
+        } else if entry.file_type()?.is_dir() {
+            dirs.push(entry);
+        }
+    }
+    
+    // Sort files and directories by file name
+    files.sort_by(|a, b| a.file_name().cmp(&b.file_name()));
+    dirs.sort_by(|a, b| a.file_name().cmp(&b.file_name()));
+    
+    // Process files in current directory
+    for entry in &files {
+        if let Some(file_pattern) = &options.file_pattern {
+            let file_name = entry.file_name();
+            let file_name_str = file_name.to_string_lossy();
 
-        if file_type.is_dir() {
-            matches.extend(grep_codebase(entry.path(), pattern, options.clone())?);
-        } else if file_type.is_file() {
-            if let Some(file_pattern) = &options.file_pattern {
-                let file_name = entry.file_name();
-                let file_name_str = file_name.to_string_lossy();
-
-                if !glob::Pattern::new(file_pattern)
-                    .unwrap()
-                    .matches(&file_name_str)
-                {
-                    continue;
-                }
+            if !glob::Pattern::new(file_pattern)
+                .unwrap()
+                .matches(&file_name_str)
+            {
+                continue;
             }
-            matches.extend(grep_file(entry.path(), pattern, &options)?);
+        }
+        
+        if let Some(file_match) = grep_file(&entry.path(), pattern, &options)? {
+            file_matches.push(file_match);
         }
     }
 
-    Ok(matches)
+    // Process subdirectories
+    for entry in &dirs {
+        file_matches.extend(grep_codebase(&entry.path(), pattern, options.clone())?);
+    }
+
+    Ok(file_matches)
 }
