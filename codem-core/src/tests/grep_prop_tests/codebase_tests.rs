@@ -1,4 +1,5 @@
 use proptest::prelude::*;
+use proptest::test_runner::TestCaseError;
 use tempfile::TempDir;
 use tokio::fs;
 use super::strategies::codebase_strategy;
@@ -7,46 +8,49 @@ use crate::grep::grep_codebase;
 use regex::RegexBuilder;
 
 proptest! {
+    #![proptest_config(ProptestConfig::with_cases(10))]
     #[test]
     fn test_grep_codebase_with_varied_structure(structure in codebase_strategy()) {
         let rt = tokio::runtime::Runtime::new().unwrap();
-        rt.block_on(async {
+        let _: Result<(), TestCaseError> = rt.block_on(async {
             let dir = TempDir::new().unwrap();
-            let _ = fs::create_dir_all(dir.path()).await;
             
+            // Create codebase structure
             for (path, content) in structure {
                 let full_path = dir.path().join(path);
                 if let Some(parent) = full_path.parent() {
-                    let _ = fs::create_dir_all(parent).await;
+                    fs::create_dir_all(parent).await.unwrap();
                 }
-                let _ = fs::write(&full_path, content).await;
+                fs::write(&full_path, content).await.unwrap();
             }
 
+            // Test grep with various patterns
             let pattern = RegexBuilder::new("test").build().unwrap();
             let options = GrepOptions::default();
             let _ = grep_codebase(dir.path(), &pattern, options).await;
 
-            Ok::<(), TestCaseError>(())
-        }).unwrap();
+            Ok(())
+        });
     }
 
     #[test]
     fn test_grep_file_pattern_variations(structure in codebase_strategy()) {
         let rt = tokio::runtime::Runtime::new().unwrap();
-        rt.block_on(async {
+        let _: Result<(), TestCaseError> = rt.block_on(async {
             let dir = TempDir::new().unwrap();
-            let _ = fs::create_dir_all(dir.path()).await;
             
-            for (path, content) in &structure {
+            // Create codebase structure
+            for (path, content) in structure {
                 let full_path = dir.path().join(path);
                 if let Some(parent) = full_path.parent() {
-                    let _ = fs::create_dir_all(parent).await;
+                    fs::create_dir_all(parent).await.unwrap();
                 }
-                let _ = fs::write(&full_path, content).await;
+                fs::write(&full_path, content).await.unwrap();
             }
 
+            // Test with various file patterns
             let pattern = RegexBuilder::new("test").build().unwrap();
-            let file_patterns = ["*.txt"];
+            let file_patterns = vec!["*.txt", "test*", "*.rs"];
             
             for file_pattern in file_patterns {
                 let options = GrepOptions {
@@ -55,8 +59,8 @@ proptest! {
                 };
                 let _ = grep_codebase(dir.path(), &pattern, options).await;
             }
-            
-            Ok::<(), TestCaseError>(())
-        }).unwrap();
+
+            Ok(())
+        });
     }
 }

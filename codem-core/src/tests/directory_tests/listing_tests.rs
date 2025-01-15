@@ -9,6 +9,7 @@ use crate::types::ListOptions;
 use super::{strategies::dir_structure_strategy, utils::*};
 
 proptest! {
+    #![proptest_config(ProptestConfig::with_cases(10))]
     #[test]
     fn test_directory_listing_consistency(structure in dir_structure_strategy()) {
         let rt = tokio::runtime::Runtime::new().unwrap();

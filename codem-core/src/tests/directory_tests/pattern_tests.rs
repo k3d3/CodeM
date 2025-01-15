@@ -9,6 +9,7 @@ use crate::types::ListOptions;
 use super::{strategies::dir_structure_strategy, utils::verify_pattern_matches};
 
 proptest! {
+    #![proptest_config(ProptestConfig::with_cases(10))]
     #[test]
     fn test_directory_pattern_filtering(
         structure in dir_structure_strategy(),

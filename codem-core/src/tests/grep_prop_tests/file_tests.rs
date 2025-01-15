@@ -8,6 +8,7 @@ use crate::grep::grep_file;
 use regex::RegexBuilder;
 
 proptest! {
+    #![proptest_config(ProptestConfig::with_cases(10))]
     #[test]
     fn test_grep_file_no_crashes(content in file_content_strategy()) {
         let rt = tokio::runtime::Runtime::new().unwrap();

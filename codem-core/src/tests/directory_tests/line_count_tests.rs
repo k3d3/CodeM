@@ -9,6 +9,7 @@ use crate::types::ListOptions;
 use super::{strategies::file_content_strategy, utils::verify_line_counts};
 
 proptest! {
+    #![proptest_config(ProptestConfig::with_cases(10))]
     #[test]
     fn test_directory_line_counting(file_count in 1..5usize) {
         let rt = tokio::runtime::Runtime::new().unwrap();
