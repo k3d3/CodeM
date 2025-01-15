@@ -53,31 +53,29 @@ pub async fn list_directory(
 
                 root.children.push(node);
             }
-        } else if file_type.is_file() {
-            if matches {
-                let mut node = TreeEntry::default();
-                node.entry.path = relative_path.to_path_buf();
-                node.entry.is_dir = false;
-                node.entry.symlink = is_symlink;
+        } else if file_type.is_file() && matches {
+            let mut node = TreeEntry::default();
+            node.entry.path = relative_path.to_path_buf();
+            node.entry.is_dir = false;
+            node.entry.symlink = is_symlink;
 
-                if options.include_type {
-                    node.entry.entry_type = Some("file".to_string());
-                }
-
-                if options.include_size || options.include_modified || options.count_lines {
-                    if let Ok(stats) = get_stats(&entry_path, options.count_lines).await {
-                        if options.include_size {
-                            node.entry.size = Some(stats.size);
-                        }
-                        if options.include_modified {
-                            node.entry.modified = Some(stats.modified);
-                        }
-                        node.entry.stats = Some(stats);
-                    }
-                }
-
-                root.children.push(node);
+            if options.include_type {
+                node.entry.entry_type = Some("file".to_string());
             }
+
+            if options.include_size || options.include_modified || options.count_lines {
+                if let Ok(stats) = get_stats(&entry_path, options.count_lines).await {
+                    if options.include_size {
+                        node.entry.size = Some(stats.size);
+                    }
+                    if options.include_modified {
+                        node.entry.modified = Some(stats.modified);
+                    }
+                    node.entry.stats = Some(stats);
+                }
+            }
+
+            root.children.push(node);
         }
     }
 

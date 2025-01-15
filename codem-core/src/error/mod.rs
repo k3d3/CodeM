@@ -13,7 +13,19 @@ error_set! {
         #[display("Multiple pattern matches found when allow_multiple_matches is false")]
         MultiplePatternMatches {
             index: usize,
-        }
+        },
+        #[display("Start pattern not found")]
+        StartPatternNotFound,
+        #[display("End pattern not found")]
+        EndPatternNotFound,
+        #[display("Multiple start patterns found")]
+        MultipleStartPatternsFound,
+        #[display("Multiple end patterns found")]
+        MultipleEndPatternsFound,
+        #[display("End pattern appears before start pattern")]
+        EndPatternBeforeStart,
+        #[display("Patterns overlap or are nested")]
+        InvalidPatternPair,
     };
 
     CommandError = {

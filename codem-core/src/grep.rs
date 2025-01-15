@@ -54,8 +54,8 @@ pub fn grep_codebase(
     }
     
     // Sort files and directories by file name
-    files.sort_by(|a, b| a.file_name().cmp(&b.file_name()));
-    dirs.sort_by(|a, b| a.file_name().cmp(&b.file_name()));
+    files.sort_by_key(|a| a.file_name());
+    dirs.sort_by_key(|a| a.file_name());
     
     // Process files in current directory
     for entry in &files {
@@ -71,14 +71,14 @@ pub fn grep_codebase(
             }
         }
         
-        if let Some(file_match) = grep_file(&entry.path(), pattern, &options)? {
+        if let Some(file_match) = grep_file(entry.path(), pattern, &options)? {
             file_matches.push(file_match);
         }
     }
 
     // Process subdirectories
     for entry in &dirs {
-        file_matches.extend(grep_codebase(&entry.path(), pattern, options.clone())?);
+        file_matches.extend(grep_codebase(entry.path(), pattern, options.clone())?);
     }
 
     Ok(file_matches)

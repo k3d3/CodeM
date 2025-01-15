@@ -4,6 +4,7 @@ use std::slice::{Iter, IterMut};
 use std::ops::{Index, IndexMut};
 
 #[derive(Debug, Clone)]
+#[derive(Default)]
 pub struct TreeEntry {
     pub entry: ListEntry,
     pub children: Vec<TreeEntry>,
@@ -26,7 +27,6 @@ impl TreeEntry {
         self.children.is_empty()
     }
 
-    // Convenience accessors for common fields
     pub fn path(&self) -> &PathBuf {
         &self.entry.path
     }
@@ -95,14 +95,6 @@ impl AsRef<TreeEntry> for TreeEntry {
     }
 }
 
-impl Default for TreeEntry {
-    fn default() -> Self {
-        Self {
-            entry: ListEntry::default(),
-            children: Vec::new(),
-        }
-    }
-}
 
 // File operations types
 #[derive(Debug, Clone)]
@@ -116,6 +108,7 @@ pub struct FileMetadata {
 pub enum WriteOperation {
     Full(String),
     Partial(PartialWrite),
+    PartialLarge(PartialWriteLarge),
 }
 
 #[derive(Debug)]
@@ -133,16 +126,40 @@ pub struct Change {
 }
 
 #[derive(Debug)]
+pub struct PartialWriteLarge {
+    pub start_str: String,
+    pub end_str: String,
+    pub new_str: String,
+    pub context_lines: usize,
+}
+
+#[derive(Debug)]
 pub struct WriteResult {
     pub line_count: usize,
     pub size: usize,
     pub partial_write_result: Option<PartialWriteResult>,
+    pub partial_write_large_result: Option<PartialWriteLargeResult>,
 }
 
 #[derive(Debug)]
 pub struct PartialWriteResult {
     pub change_results: Vec<ChangeResult>,
     pub full_content: Option<String>,
+}
+
+#[derive(Debug)]
+pub struct PartialWriteLargeResult {
+    pub line_number_start: usize,
+    pub line_number_end: usize,
+    pub context: LargeChangeContext,
+}
+
+#[derive(Debug)]
+pub struct LargeChangeContext {
+    pub before_start: Vec<String>,
+    pub start_content: Vec<String>,
+    pub end_content: Vec<String>,
+    pub after_end: Vec<String>,
 }
 
 #[derive(Debug)]
