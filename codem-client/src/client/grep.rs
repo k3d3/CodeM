@@ -5,12 +5,12 @@ use std::future::Future;
 
 use crate::error::GrepError;
 use crate::error::grep_error::Pattern;
-use crate::types::{GrepMatch, GrepResults};
+use codem_core::types::{GrepMatch, GrepFileMatch};
 
 pub(crate) async fn grep_file(
-    path: impl AsRef<Path>,
-    pattern: &str,
-) -> Result<Vec<GrepMatch>, GrepError> {
+    path: impl AsRef<Path>, 
+    pattern: &str
+) -> Result<GrepFileMatch, GrepError> {
     let path = path.as_ref();
     
     if !path.exists() {
@@ -30,24 +30,28 @@ pub(crate) async fn grep_file(
         }
     })?;
 
-    let mut matches = Vec::new();
+    let mut grep_matches = Vec::new();
     for (line_number, line) in contents.lines().enumerate() {
         if regex.is_match(line) {
-            matches.push(GrepMatch {
+            grep_matches.push(GrepMatch {
                 line_number: line_number + 1,
-                line: line.to_string(),
-                file_path: path.display().to_string(),
+                context: line.to_string(),
             });
         }
     }
+    
+    Ok(GrepFileMatch {
+        path: path.to_path_buf(),
+        matches: grep_matches,
+    })
 
-    Ok(matches)
+
 }
 
 pub(crate) async fn grep_codebase(
     root_dir: impl AsRef<Path>,
     pattern: &str,
-) -> Result<GrepResults, GrepError> {
+) -> Result<Vec<GrepFileMatch>, GrepError> {
     let root_dir = root_dir.as_ref();
     
     if !root_dir.exists() {
@@ -60,26 +64,16 @@ pub(crate) async fn grep_codebase(
         GrepError::InvalidPattern(Pattern(pattern.to_string()))
     })?;
 
-    let mut matches = Vec::new();
-    let mut files_searched = 0;
-    let mut lines_searched = 0;
-
-    walk_dir(root_dir, &regex, &mut matches, &mut files_searched, &mut lines_searched).await?;
-
-    Ok(GrepResults {
-        pattern: pattern.to_string(),
-        matches,
-        files_searched,
-        lines_searched,
-    })
+    let mut file_matches = Vec::new();
+    walk_dir(root_dir, &regex, pattern, &mut file_matches).await?;
+    Ok(file_matches)
 }
 
 fn walk_dir<'a>(
     dir: &'a Path,
     regex: &'a Regex,
-    matches: &'a mut Vec<GrepMatch>,
-    files_searched: &'a mut usize,
-    lines_searched: &'a mut usize,
+    pattern: &'a str,
+    file_matches: &'a mut Vec<GrepFileMatch>,
 ) -> Pin<Box<dyn Future<Output = Result<(), GrepError>> + 'a>> {
     Box::pin(async move {
         let mut dir_entries = tokio::fs::read_dir(dir).await.map_err(|e| {
@@ -109,18 +103,9 @@ fn walk_dir<'a>(
                     .unwrap_or(false);
 
                 if !is_binary {
-                    *files_searched += 1;
-
-                    if let Ok(contents) = tokio::fs::read_to_string(&path).await {
-                        for (line_number, line) in contents.lines().enumerate() {
-                            *lines_searched += 1;
-                            if regex.is_match(line) {
-                                matches.push(GrepMatch {
-                                    line_number: line_number + 1,
-                                    line: line.to_string(),
-                                    file_path: path.display().to_string(),
-                                });
-                            }
+                    if let Ok(grep_file_match) = grep_file(&path, pattern).await {
+                        if !grep_file_match.matches.is_empty() {
+                            file_matches.push(grep_file_match);
                         }
                     }
                 }
@@ -133,7 +118,7 @@ fn walk_dir<'a>(
                     "target" | "node_modules" | ".git" | 
                     ".idea" | ".vscode" | "bin" | "obj"
                 ) {
-                    walk_dir(&path, regex, matches, files_searched, lines_searched).await?;
+                    walk_dir(&path, regex, pattern, file_matches).await?;
                 }
             }
         }
@@ -142,97 +127,3 @@ fn walk_dir<'a>(
     })
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use rstest::*;
-    use tempfile::tempdir;
-    use std::fs;
-
-    #[rstest]
-    #[tokio::test]
-    async fn test_grep_file_found() {
-        let dir = tempdir().unwrap();
-        let file_path = dir.path().join("test.txt");
-        fs::write(&file_path, "test line 1\nfound this\ntest line 3").unwrap();
-
-        let matches = grep_file(&file_path, "found").await.unwrap();
-        assert_eq!(matches.len(), 1);
-        assert_eq!(matches[0].line_number, 2);
-        assert_eq!(matches[0].line, "found this");
-    }
-
-    #[rstest]
-    #[tokio::test]
-    async fn test_grep_file_not_found() {
-        let dir = tempdir().unwrap();
-        let file_path = dir.path().join("nonexistent.txt");
-
-        let result = grep_file(&file_path, "pattern").await;
-        assert!(matches!(result,
-            Err(GrepError::FileNotFound { path }) if path.contains("nonexistent.txt")
-        ));
-    }
-
-    #[rstest]
-    #[tokio::test]
-    async fn test_grep_file_invalid_pattern() {
-        let dir = tempdir().unwrap();
-        let file_path = dir.path().join("test.txt");
-        fs::write(&file_path, "test line").unwrap();
-
-        let result = grep_file(&file_path, "*invalid)").await;
-        assert!(matches!(result,
-            Err(GrepError::InvalidPattern(_))
-        ));
-    }
-
-    #[rstest]
-    #[tokio::test]
-    async fn test_grep_codebase() {
-        let dir = tempdir().unwrap();
-        
-        fs::create_dir(dir.path().join("subdir")).unwrap();
-        fs::write(
-            dir.path().join("file1.txt"),
-            "test line 1\nfound this\ntest line 3"
-        ).unwrap();
-        fs::write(
-            dir.path().join("subdir/file2.txt"), 
-            "another line\nfound that\nlast line"
-        ).unwrap();
-
-        let results = grep_codebase(dir.path(), "found").await.unwrap();
-        assert_eq!(results.matches.len(), 2);
-        assert_eq!(results.files_searched, 2);
-        assert!(results.lines_searched >= 6);
-
-        let mut matches = results.matches;
-        matches.sort_by_key(|m| m.file_path.clone());
-
-        assert_eq!(matches[0].line_number, 2);
-        assert_eq!(matches[0].line, "found this");
-        assert_eq!(matches[1].line_number, 2);
-        assert_eq!(matches[1].line, "found that");
-    }
-
-    #[rstest]
-    #[tokio::test]
-    async fn test_grep_codebase_skip_binary() {
-        let dir = tempdir().unwrap();
-        
-        fs::write(
-            dir.path().join("test.txt"),
-            "found this"
-        ).unwrap();
-        fs::write(
-            dir.path().join("test.exe"), 
-            "found that"
-        ).unwrap();
-
-        let results = grep_codebase(dir.path(), "found").await.unwrap();
-        assert_eq!(results.matches.len(), 1);
-        assert_eq!(results.files_searched, 1);
-        assert!(results.matches[0].line == "found this");
-    }
-}

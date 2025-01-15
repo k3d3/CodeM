@@ -1,3 +1,5 @@
-pub mod client;
-pub mod read_tests;
-pub mod grep_tests;
+mod list_directory_test;
+mod grep_test;
+
+#[allow(unused_imports)]
+pub(crate) use crate::client::*;

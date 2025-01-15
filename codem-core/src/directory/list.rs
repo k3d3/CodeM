@@ -25,7 +25,11 @@ pub async fn list_directory(
         let relative_path = entry_path.strip_prefix(base_path).unwrap();
 
         let matches = file_pattern_regex.as_ref().map(|regex| {
-            regex.is_match(relative_path.to_str().unwrap())
+            regex.is_match(
+                entry_path.file_name()
+                    .and_then(|n| n.to_str())
+                    .unwrap_or("")
+            )
         }).unwrap_or(true);
 
         let is_symlink = file_type.is_symlink();

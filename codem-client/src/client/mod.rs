@@ -1,8 +1,12 @@
 pub(crate) mod grep;
+pub(crate) mod file;
 
 use std::path::Path;
 use crate::error::GrepError;
-use crate::types::*;
+use codem_core::types::*;
+
+use tokio::io;
+
 use anyhow::Result;
 
 #[derive(Default)]
@@ -26,18 +30,26 @@ impl Client {
     }
 
     pub async fn grep_file(
-        &self, 
-        path: impl AsRef<Path>, 
+        &self,
+        path: impl AsRef<Path>,
         pattern: &str
-    ) -> Result<Vec<GrepMatch>, GrepError> {
+    ) -> Result<GrepFileMatch, GrepError> {
         grep::grep_file(path, pattern).await
+    }
+
+    pub async fn list_directory(
+        &self,
+        path: impl AsRef<Path>,
+        options: ListOptions
+    ) -> io::Result<TreeEntry> {
+        file::list_directory(path, options).await
     }
 
     pub async fn grep_codebase(
         &self,
         root_dir: impl AsRef<Path>,
         pattern: &str
-    ) -> Result<GrepResults, GrepError> {
+    ) -> Result<Vec<GrepFileMatch>, GrepError> {
         grep::grep_codebase(root_dir, pattern).await
     }
 }
