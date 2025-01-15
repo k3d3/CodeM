@@ -5,6 +5,6 @@ use serde::{Deserialize, Serialize};
 pub struct Project {
     pub name: String,
     pub base_path: PathBuf,
-    pub allowed_paths: Vec<PathBuf>,
+    pub allowed_paths: Option<Vec<PathBuf>>,
     pub test_command: Option<String>,
 }

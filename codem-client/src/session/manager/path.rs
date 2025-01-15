@@ -16,10 +16,12 @@ impl SessionManager {
         }
 
         if !allowed {
-            for allowed_path in &project.allowed_paths {
-                if path.starts_with(allowed_path) {
-                    allowed = true;
-                    break;
+            if let Some(allowed_paths) = &project.allowed_paths {
+                for allowed_path in allowed_paths {
+                    if path.starts_with(allowed_path) {
+                        allowed = true;
+                        break;
+                    }
                 }
             }
         }

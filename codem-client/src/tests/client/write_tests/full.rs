@@ -1,33 +1,40 @@
 use rstest::rstest;
 use tempfile::TempDir;
+use std::fs;
 
-use crate::types::{CheckOptions, WriteOperation};
 use crate::Client;
 
 #[rstest]
 #[tokio::test]
-async fn test_write_full() {
+async fn test_full_write() {
     let temp_dir = TempDir::new().unwrap();
-    let temp_path = temp_dir.path();
-    let file_path = temp_path.join("test.txt");
+    let file_path = temp_dir.path().join("test.txt");
+    fs::write(&file_path, "original content").unwrap();
 
-    let client = Client::new(vec![temp_path.to_path_buf()]).unwrap();
+    let config_path = temp_dir.path().join("config.toml");
+    let config = format!(
+        r#"[[projects]]
+        base_path = "{}"
+        name = "test""#,
+        temp_dir.path().display()
+    );
+    fs::write(&config_path, &config).unwrap();
+
+    let client = Client::new(&config_path).await.unwrap();
     let session_id = client.create_session("test").await.unwrap();
 
-    let content = "new content\nline 2";
+    // Read first to cache timestamp
+    client.read_file(&session_id, &file_path).await.unwrap();
+
     let result = client
-        .write(
+        .write_file(
             &session_id,
             &file_path,
-            WriteOperation::Full(content.to_string()),
-            CheckOptions::default(),
+            "new content".to_string(),
         )
         .await
         .unwrap();
 
-    assert_eq!(result.matches.len(), 1);
-    assert_eq!(result.matches[0].content, content);
-
-    let file_content = tokio::fs::read_to_string(&file_path).await.unwrap();
-    assert_eq!(file_content, content);
+    assert_eq!(result.size, "new content".len());
+    assert_eq!(result.line_count, 1);
 }

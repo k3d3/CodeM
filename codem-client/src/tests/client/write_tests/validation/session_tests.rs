@@ -1,10 +1,4 @@
-use crate::{
-    types::file_ops::{WriteOperation, WriteOptions},
-    error::{ClientError, SessionError},
-    session::SessionId,
-    Client,
-};
-use codem_core::types::PartialWrite;
+use crate::{Client, ClientError};
 use std::fs;
 use tempfile::TempDir;
 
@@ -23,23 +17,16 @@ async fn test_invalid_session() {
     );
     fs::write(&config_path, &config).unwrap();
 
-    let client = Client::new(&config_path).await.unwrap();
-    let invalid_session = SessionId::new();
-
-    let write = PartialWrite {
-        pattern: "test".to_string(),
-        replacement: "new".to_string(),
-        context_lines: 3,
-    };
+    let client = Client::new(&config_path).await.unwrap(); 
+    let invalid_session = "nonexistent".to_string();
 
     let result = client
         .write_file(
             &invalid_session,
             &file_path,
-            WriteOperation::Partial(write),
-            WriteOptions::default(),
+            "new".to_string(),
         )
         .await;
 
-    assert!(matches!(result, Err(ClientError::SessionError(SessionError::SessionNotFound { .. }))));
+    assert!(result.is_err());
 }

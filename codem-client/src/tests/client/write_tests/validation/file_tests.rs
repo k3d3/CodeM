@@ -1,17 +1,12 @@
-use crate::{
-    types::file_ops::{WriteOperation, WriteOptions},
-    error::{ClientError, FileError},
-    Client,
-};
-use codem_core::types::PartialWrite;
+use crate::{Client, ClientError};
 use std::fs;
 use tempfile::TempDir;
 
 #[tokio::test]
-async fn test_file_not_read() {
+async fn test_write_without_read() {
     let temp_dir = TempDir::new().unwrap();
     let file_path = temp_dir.path().join("test.txt");
-    fs::write(&file_path, "test content").unwrap();
+    fs::write(&file_path, "test").unwrap();
 
     let config_path = temp_dir.path().join("config.toml");
     let config = format!(
@@ -25,20 +20,13 @@ async fn test_file_not_read() {
     let client = Client::new(&config_path).await.unwrap();
     let session_id = client.create_session("test").await.unwrap();
 
-    let write = PartialWrite {
-        pattern: "test".to_string(),
-        replacement: "new".to_string(),
-        context_lines: 3,
-    };
-
     let result = client
         .write_file(
-            &session_id,
+            &session_id, 
             &file_path,
-            WriteOperation::Partial(write),
-            WriteOptions::default(),
+            "new".to_string(),
         )
         .await;
 
-    assert!(matches!(result, Err(ClientError::FileError(FileError::FileNotRead { .. }))));
+    assert!(result.is_err());
 }

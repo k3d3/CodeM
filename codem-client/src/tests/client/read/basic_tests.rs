@@ -1,19 +1,27 @@
-use crate::Client;
-use rstest::rstest;
+use crate::{ClientError, Client};
+use std::fs;
 use tempfile::TempDir;
 
-#[rstest]
 #[tokio::test]
-async fn test_read_file() {
-    let temp_dir = TempDir::new().unwrap();
-    let temp_path = temp_dir.path();
-    let file_path = temp_path.join("test.txt");
+async fn test_basic_read() -> Result<(), ClientError> {
+    let temp = TempDir::new().unwrap();
+    let test_file = temp.path().join("test.txt");
+    fs::write(&test_file, "test content").map_err(ClientError::from)?;
 
-    std::fs::write(&file_path, "test content\nline 2\nline 3").unwrap();
+    let config_path = temp.path().join("config.toml");
+    let config = format!(
+        r#"[[projects]]
+        base_path = "{}"
+        name = "test""#,
+        temp.path().display(),
+    );
+    fs::write(&config_path, &config).map_err(ClientError::from)?;
 
-    let client = Client::new(vec![temp_path.to_path_buf()]).unwrap();
-    let session_id = client.create_session("test").await.unwrap();
+    let client = Client::new(&config_path).await?;
+    let session_id = client.create_session("test").await?;
 
-    let result = client.read(&session_id, &file_path).await.unwrap();
-    assert_eq!(result.content, "test content\nline 2\nline 3");
+    let content = client.read_file(&session_id, &test_file).await?;
+    assert_eq!(content, "test content");
+
+    Ok(())
 }

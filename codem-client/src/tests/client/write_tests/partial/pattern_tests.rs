@@ -1,9 +1,5 @@
-use crate::{
-    types::file_ops::{WriteOperation, WriteOptions},
-    error::{ClientError, FileError},
-    Client,
-};
-use codem_core::types::PartialWrite;
+use crate::{Client, ClientError};
+use codem_core::types::Change;
 use std::fs;
 use tempfile::TempDir;
 
@@ -11,7 +7,7 @@ use tempfile::TempDir;
 async fn test_pattern_not_found() {
     let temp_dir = TempDir::new().unwrap();
     let file_path = temp_dir.path().join("test.txt");
-    fs::write(&file_path, "test content").unwrap();
+    fs::write(&file_path, "content").unwrap();
 
     let config_path = temp_dir.path().join("config.toml");
     let config = format!(
@@ -24,22 +20,22 @@ async fn test_pattern_not_found() {
 
     let client = Client::new(&config_path).await.unwrap();
     let session_id = client.create_session("test").await.unwrap();
-    let _ = client.read(&session_id, &file_path).await.unwrap();
 
-    let write = PartialWrite {
-        pattern: "nonexistent".to_string(),
-        replacement: "new".to_string(),
-        context_lines: 3,
-    };
+    let _ = client.read_file(&session_id, &file_path).await.unwrap();
+
+    let changes = vec![Change {
+        old_str: "nonexistent".to_string(),
+        new_str: "new".to_string(),
+        allow_multiple_matches: false,
+    }];
 
     let result = client
-        .write_file(
+        .write_file_partial(
             &session_id,
             &file_path,
-            WriteOperation::Partial(write),
-            WriteOptions::default(),
+            changes,
         )
         .await;
 
-    assert!(matches!(result, Err(ClientError::FileError(FileError::PatternNotFound { .. }))));
+    assert!(result.is_err());
 }

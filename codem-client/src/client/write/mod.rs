@@ -16,7 +16,7 @@ impl Client {
             path,
             WriteOperation::Full(contents),
             Some(timestamp)
-        ).await?;
+        ).await.map_err(ClientError::from)?;
 
         let metadata = path.metadata()?;
         self.sessions.update_timestamp(session_id, path, metadata.modified()?)?;
@@ -43,7 +43,7 @@ impl Client {
             path,
             WriteOperation::Partial(partial),
             Some(timestamp)
-        ).await?;
+        ).await.map_err(ClientError::from)?;
 
         let metadata = path.metadata()?;
         self.sessions.update_timestamp(session_id, path, metadata.modified()?)?;

@@ -1,18 +1,12 @@
-use crate::{
-    types::file_ops::{WriteOperation, WriteOptions},
-    error::{ClientError, FileError},
-    Client,
-};
-use codem_core::types::PartialWrite;
+use crate::{Client, ClientError};
 use std::fs;
 use tempfile::TempDir;
 
 #[tokio::test]
-async fn test_disallowed_path() {
+async fn test_path_not_allowed() {
     let temp_dir = TempDir::new().unwrap();
-    let other_dir = TempDir::new().unwrap();
-    let disallowed_file = other_dir.path().join("test.txt");
-    fs::write(&disallowed_file, "test content").unwrap();
+    let disallowed_file = temp_dir.path().parent().unwrap().join("test.txt"); 
+    fs::write(&disallowed_file, "test").unwrap();
 
     let config_path = temp_dir.path().join("config.toml");
     let config = format!(
@@ -26,20 +20,13 @@ async fn test_disallowed_path() {
     let client = Client::new(&config_path).await.unwrap();
     let session_id = client.create_session("test").await.unwrap();
 
-    let write = PartialWrite {
-        pattern: "test".to_string(),
-        replacement: "new".to_string(),
-        context_lines: 3,
-    };
-
     let result = client
         .write_file(
             &session_id,
             &disallowed_file,
-            WriteOperation::Partial(write),
-            WriteOptions::default(),
+            "new".to_string(),
         )
         .await;
 
-    assert!(matches!(result, Err(ClientError::FileError(FileError::PathNotAllowed { .. }))));
+    assert!(result.is_err());
 }

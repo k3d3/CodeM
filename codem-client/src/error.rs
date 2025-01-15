@@ -1,11 +1,9 @@
 use error_set::error_set;
-use codem_core::error::{WriteError, CommandError};
 
 error_set! {
     // Top level error aggregating all client errors
     ClientError = OperationError || SessionError || ProjectError;
 
-    // Common operation errors
     OperationError = {
         #[display("Path not allowed: {path}")]
         PathNotAllowed { path: String },
@@ -26,13 +24,12 @@ error_set! {
         IoError(std::io::Error),
         
         #[display("Command error: {0}")]
-        CommandError(CommandError),
+        CommandError(codem_core::error::CommandError),
         
         #[display("Failed to parse TOML: {0}")]
         TomlError(toml::de::Error),
     };
 
-    // Session management errors
     SessionError = {
         #[display("Session not found: {id}")]
         SessionNotFound { id: String },
@@ -53,7 +50,6 @@ error_set! {
         SerializationError(toml::ser::Error),
     };
 
-    // Project configuration errors
     ProjectError = {
         #[display("Project not found at path: {path}")]
         NotFound { path: String },
@@ -66,29 +62,13 @@ error_set! {
     };
 }
 
-impl From<WriteError> for ClientError {
-    fn from(err: WriteError) -> Self {
-        Self::from(OperationError::from(err))
-    }
-}
-
-impl From<WriteError> for OperationError {
-    fn from(err: WriteError) -> Self {
+impl From<codem_core::error::WriteError> for ClientError {
+    fn from(err: codem_core::error::WriteError) -> Self {
+        use codem_core::error::WriteError;
         match err {
-            WriteError::IoError(e) => Self::IoError(e),
-            WriteError::TimestampMismatch => Self::TimestampMismatch { 
-                path: "unknown".to_string() 
-            },
-            WriteError::MultiplePatternMatches { .. } |
-            WriteError::StartPatternNotFound |
-            WriteError::EndPatternNotFound |
-            WriteError::MultipleStartPatternsFound |
-            WriteError::MultipleEndPatternsFound |
-            WriteError::EndPatternBeforeStart |
-            WriteError::InvalidPatternPair |
-            WriteError::AhoCorasickError(_) => Self::PatternError { 
-                message: err.to_string() 
-            },
+            WriteError::IoError(e) => ClientError::IoError(e),
+            WriteError::TimestampMismatch { .. } => ClientError::TimestampMismatch { path: "unknown".to_string() },
+            _ => ClientError::PatternError { message: err.to_string() },
         }
     }
 }
