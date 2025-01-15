@@ -1,3 +1,3 @@
-mod client;
-mod read_tests;
-mod session_tests;
+pub mod client;
+pub mod read_tests;
+pub mod grep_tests;
