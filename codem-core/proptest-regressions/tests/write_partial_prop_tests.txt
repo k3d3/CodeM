@@ -5,3 +5,5 @@
 # It is recommended to check this file in to source control so that
 # everyone who runs the test benefits from these saved cases.
 cc 37b986f87765215dbb0f8fde126985d62d22c8db926d1611332173b16cbf08ae # shrinks to content = "0", (old_str, new_str) = ("0", "A"), context_lines = 0
+cc 5b206f434bc07354082ab75832ab6fcd82010913f4298e3fa1d4e1d3d81aa118 # shrinks to content = "", pattern = " ", replacement = "", context_lines = 0
+cc 9b737817a7a943ede4e5012cf348462b7da62efe0b78b6a78702249f07643276 # shrinks to prefix = "Ѩ", content = "A", suffix = "", pattern = "Ѩ", replacement = "", context_lines = 0

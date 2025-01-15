@@ -1,4 +1,4 @@
-use crate::types::{WriteResult, PartialWriteLarge, PartialWriteLargeResult, LargeChangeContext};
+use crate::types::{WriteResult, PartialWriteLarge, PartialWriteLargeResult, LargeChangeContext, WriteResultDetails};
 
 pub fn create_result(
     start_line: usize, 
@@ -10,8 +10,7 @@ pub fn create_result(
     WriteResult {
         line_count: output.lines().count(),
         size: output.len(),
-        partial_write_result: None,
-        partial_write_large_result: Some(PartialWriteLargeResult {
+        details: WriteResultDetails::PartialLarge(PartialWriteLargeResult {
             line_number_start: start_line + 1,
             line_number_end: end_line + 1,
             context: create_context(lines, start_line, end_line, partial_write),

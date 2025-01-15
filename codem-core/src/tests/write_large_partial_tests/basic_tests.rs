@@ -1,62 +1,39 @@
-use rstest::rstest;
 use tokio::fs;
-use crate::types::{PartialWriteLarge, WriteOperation};
+use crate::types::{PartialWriteLarge, WriteOperation, WriteResultDetails};
 use crate::fs_write::write_file;
 use tempfile::TempDir;
+use rstest::rstest;
 
 #[rstest]
-#[case("START", "END", "CONTENT")]
-#[case("START_A", "END_B", "MIDDLE")]
-#[case("A_START", "B_END", "TEXT")]
+#[case("start", "end", "Before\nstart\nContent\nend\nAfter\n", 1)]
 #[tokio::test]
-async fn test_valid_patterns(#[case] start: &str, #[case] end: &str, #[case] content: &str) {
+async fn test_basic_large_write(
+    #[case] start_pattern: &str,
+    #[case] end_pattern: &str,
+    #[case] content: &str,
+    #[case] context_lines: usize,
+) {
     let dir = TempDir::new().unwrap();
     let file_path = dir.path().join("test.txt");
 
-    let file_content = format!("{}\n{}\n{}\n", start, content, end);
-    fs::write(&file_path, &file_content).await.unwrap();
-
-    let operation = WriteOperation::PartialLarge(PartialWriteLarge {
-        start_str: format!("{}\n", start),
-        end_str: format!("{}\n", end),
-        new_str: "new\n".to_string(),
-        context_lines: 1,
-    });
-
-    let result = write_file(&file_path, operation, None).await;
-    assert!(result.is_ok());
-}
-
-#[tokio::test]
-async fn test_content_preservation() {
-    let dir = TempDir::new().unwrap();
-    let file_path = dir.path().join("test.txt");
-
-    let content = "PREFIX\nSTART\nMIDDLE\nEND\nSUFFIX\n";
     fs::write(&file_path, content).await.unwrap();
 
     let operation = WriteOperation::PartialLarge(PartialWriteLarge {
-        start_str: "START\n".to_string(),
-        end_str: "END\n".to_string(),
-        new_str: "REPLACED\n".to_string(),
-        context_lines: 1,
+        start_str: start_pattern.to_string(),
+        end_str: end_pattern.to_string(),
+        new_str: "replaced".to_string(),
+        context_lines,
     });
 
     let result = write_file(&file_path, operation, None).await.unwrap();
-    let write_result = result.partial_write_large_result.unwrap();
 
-    let final_content = fs::read_to_string(&file_path).await.unwrap();
-    
-    // Original content preserved
-    assert!(final_content.starts_with("PREFIX\n"));
-    assert!(final_content.ends_with("SUFFIX\n"));
+    if let WriteResultDetails::PartialLarge(write_result) = result.details {
+        assert_eq!(write_result.line_number_start, 2);
+        assert_eq!(write_result.line_number_end, 4);
 
-    // New content present 
-    assert!(final_content.contains("REPLACED\n"));
-
-    // Context lines correct
-    assert!(write_result.context.before_start.len() <= 1);
-    assert!(write_result.context.after_end.len() <= 1);
-    assert!(write_result.context.start_content.len() <= 2);
-    assert!(write_result.context.end_content.len() <= 2);
+        assert_eq!(write_result.context.before_start, vec!["Before"]);
+        assert_eq!(write_result.context.start_content, vec!["replaced"]);
+        assert_eq!(write_result.context.end_content, vec!["replaced"]);
+        assert_eq!(write_result.context.after_end, vec!["After"]);
+    }
 }

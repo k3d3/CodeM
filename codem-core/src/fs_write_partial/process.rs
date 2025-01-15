@@ -1,4 +1,4 @@
-use crate::types::{PartialWrite, WriteResult, PartialWriteResult};
+use crate::types::{PartialWrite, WriteResult, PartialWriteResult, WriteResultDetails};
 use crate::WriteError;
 use std::path::Path;
 use tokio::fs;
@@ -29,7 +29,7 @@ pub async fn process_partial_write(
     Ok(WriteResult {
         line_count: output.lines().count(),
         size: output.len(),
-        partial_write_result: Some(PartialWriteResult {
+        details: WriteResultDetails::Partial(PartialWriteResult {
             change_results: matches_out,
             full_content: if partial_writes.return_full_content {
                 Some(output)
@@ -37,6 +37,5 @@ pub async fn process_partial_write(
                 None
             },
         }),
-        partial_write_large_result: None,
     })
 }

@@ -37,11 +37,17 @@ pub struct PartialWriteLarge {
 }
 
 #[derive(Debug)]
+pub enum WriteResultDetails {
+    None,
+    Partial(PartialWriteResult),
+    PartialLarge(PartialWriteLargeResult),
+}
+
+#[derive(Debug)]
 pub struct WriteResult {
     pub line_count: usize,
     pub size: usize,
-    pub partial_write_result: Option<PartialWriteResult>,
-    pub partial_write_large_result: Option<PartialWriteLargeResult>,
+    pub details: WriteResultDetails,
 }
 
 #[derive(Debug)]

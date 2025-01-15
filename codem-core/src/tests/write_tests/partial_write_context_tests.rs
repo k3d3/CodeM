@@ -1,5 +1,5 @@
 use tokio::fs;
-use crate::types::{PartialWrite, WriteOperation, Change};
+use crate::types::{PartialWrite, WriteOperation, Change, WriteResultDetails};
 use crate::fs_write::write_file;
 use tempfile::TempDir;
 use rstest::rstest;
@@ -44,7 +44,7 @@ async fn test_partial_write_context(
     let result = write_file(&file_path, operation, None).await.unwrap();
 
     // Verify line numbers
-    if let Some(partial_result) = result.partial_write_result {
+    if let WriteResultDetails::Partial(partial_result) = result.details {
         assert_eq!(partial_result.change_results.len(), 1);
         let change = &partial_result.change_results[0];
         

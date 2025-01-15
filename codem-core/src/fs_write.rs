@@ -1,6 +1,6 @@
 use crate::fs_write_partial::process_partial_write;
 use crate::fs_write_large_partial::process_large_partial_write;
-use crate::types::{WriteOperation, WriteResult};
+use crate::types::{WriteOperation, WriteResult, WriteResultDetails};
 use crate::WriteError;
 use std::path::Path;
 use std::time::SystemTime;
@@ -28,8 +28,7 @@ pub async fn write_file(
             let result = WriteResult {
                 line_count: contents.lines().count(),
                 size: contents.len(),
-                partial_write_result: None,
-                partial_write_large_result: None,
+                details: WriteResultDetails::None,
             };
             Ok(result)
         }
