@@ -25,7 +25,7 @@ async fn test_disallowed_path() {
     fs::write(&config_path, &config).unwrap();
 
     let client = Client::new(&config_path).await.unwrap();
-    let session_id = client.run_on_project("test").await.unwrap();
+    let session_id = client.create_session("test").await.unwrap();
 
     let write = PartialWrite {
         pattern: "test".to_string(),
@@ -97,7 +97,7 @@ async fn test_file_not_read() {
     fs::write(&config_path, &config).unwrap();
 
     let client = Client::new(&config_path).await.unwrap();
-    let session_id = client.run_on_project("test").await.unwrap();
+    let session_id = client.create_session("test").await.unwrap();
 
     // Don't read the file before attempting write
 

@@ -23,7 +23,7 @@ async fn test_pattern_not_found() {
     fs::write(&config_path, &config).unwrap();
 
     let client = Client::new(&config_path).await.unwrap();
-    let session_id = client.run_on_project("test").await.unwrap();
+    let session_id = client.create_session("test").await.unwrap();
     let _ = client.read(&session_id, &file_path).await.unwrap();
 
     let write = PartialWrite {
@@ -60,7 +60,7 @@ async fn test_multiple_matches() {
     fs::write(&config_path, &config).unwrap();
 
     let client = Client::new(&config_path).await.unwrap();
-    let session_id = client.run_on_project("test").await.unwrap();
+    let session_id = client.create_session("test").await.unwrap();
     let _ = client.read(&session_id, &file_path).await.unwrap();
 
     let write = PartialWrite {

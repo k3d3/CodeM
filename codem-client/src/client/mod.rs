@@ -45,7 +45,7 @@ impl Client {
         })
     }
 
-    pub async fn run_on_project(&self, project_name: &str) -> Result<String, ClientError> {
+    pub async fn create_session(&self, project_name: &str) -> Result<String, ClientError> {
         let session_id = self.sessions.create_session(project_name).await?;
         Ok(session_id.as_str().to_string())
     }

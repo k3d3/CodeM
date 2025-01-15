@@ -25,7 +25,7 @@ async fn test_partial_write() {
 
     // Create client and session
     let client = Client::new(&config_path).await.unwrap();
-    let session_id = client.run_on_project("test").await.unwrap();
+    let session_id = client.create_session("test").await.unwrap();
 
     // Read first to cache timestamp
     let _ = client.read(&session_id, &file_path).await.unwrap();
