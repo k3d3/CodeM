@@ -6,14 +6,14 @@ use wait_timeout::ChildExt;
 use crate::types::CommandOutput;
 use crate::CommandError;
 
-pub fn run_command(
+pub async fn run_command(
     command: &str,
-    args: &[&str],
     cwd: Option<&PathBuf>,
     timeout_ms: Option<u64>,
 ) -> Result<CommandOutput, CommandError> {
-    let mut cmd = Command::new(command);
-    cmd.args(args);
+    let mut cmd = Command::new("sh");
+    cmd.args(["-c", command]);
+
 
     if let Some(cwd) = cwd {
         cmd.current_dir(cwd);
