@@ -1,6 +1,7 @@
 pub(crate) mod grep;
 pub(crate) mod read;
 pub mod write;
+pub(crate) mod command;
 
 use std::path::Path;
 use crate::{

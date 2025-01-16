@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use error_set::error_set;
 pub mod grep_error;
 pub use grep_error::GrepError;
-use codem_core::error::WriteError;
+use codem_core::error::{WriteError, CommandError};
 
 error_set! {
     ClientError = SessionError || OperationError || {
@@ -14,6 +14,8 @@ error_set! {
         DirCreateError { path: PathBuf },
         #[display("Write error: {0}")]
         WriteError(WriteError),
+        #[display("Command error: {0}")]
+        CommandError(CommandError),
     };
 
     #[derive(Clone)]
