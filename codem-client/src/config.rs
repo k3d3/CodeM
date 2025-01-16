@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 use std::collections::HashMap;
 use std::sync::Arc;
+use regex::Regex;
 
 use crate::error::ConfigError;
 use crate::project::Project;
@@ -27,7 +28,7 @@ impl ClientConfig {
     /// # Errors
     /// - Returns `ConfigError::InvalidSessionFile` if the session file path is not valid
     /// - Returns `ConfigError::InvalidProject` if a project is invalid
-    /// - Returns `ConfigError::InvalidPattern` if a pattern is invalid
+    /// - Returns `ConfigError::InvalidPattern` if a pattern is empty or invalid regex
     pub fn new(
         projects: Vec<Project>,
         session_file: PathBuf, 
@@ -48,12 +49,24 @@ impl ClientConfig {
                     pattern: pattern.clone()
                 });
             }
+            // Validate as regex
+            if let Err(_) = Regex::new(pattern) {
+                return Err(ConfigError::InvalidPattern {
+                    pattern: pattern.clone()
+                });
+            }
         }
 
         for pattern in &risky_patterns {
             if pattern.is_empty() {
                 return Err(ConfigError::InvalidPattern {
                     pattern: pattern.clone() 
+                });
+            }
+            // Validate as regex
+            if let Err(_) = Regex::new(pattern) {
+                return Err(ConfigError::InvalidPattern {
+                    pattern: pattern.clone()
                 });
             }
         }
@@ -77,12 +90,22 @@ impl ClientConfig {
     /// 2. It matches at least one safe pattern
     pub fn is_command_safe(&self, command: &str) -> bool {
         // If command matches any risky pattern, it's not safe
-        if self.risky_patterns.iter().any(|p| command.contains(p)) {
-            return false;
+        for pattern in &self.risky_patterns {
+            if let Ok(re) = Regex::new(pattern) {
+                if re.is_match(command) {
+                    return false;
+                }
+            }
         }
 
         // Command must match at least one safe pattern
-        self.safe_patterns.iter().any(|p| command.contains(p))
+        self.safe_patterns.iter().any(|p| {
+            if let Ok(re) = Regex::new(p) {
+                re.is_match(command)
+            } else {
+                false
+            }
+        })
     }
 }
 
@@ -92,50 +115,67 @@ mod tests {
     use std::fs;
     use rstest::rstest;
 
+    fn setup_test_dir() -> PathBuf {
+        let temp_dir = std::env::temp_dir().join("codem_test");
+        fs::create_dir_all(&temp_dir).unwrap();
+        fs::create_dir_all(temp_dir.join("session")).unwrap();
+        temp_dir
+    }
+
+    fn cleanup_test_dir(dir: PathBuf) {
+        let _ = fs::remove_dir_all(dir);
+    }
+
     #[rstest]
-    #[case("cargo test", vec!["cargo".into()], vec![], true)]
-    #[case("cargo test", vec![], vec!["cargo".into()], false)]
-    #[case("cargo test", vec!["cargo".into()], vec!["cargo".into()], false)]
-    #[case("big bad command", vec!["big".into()], vec!["big bad".into()], false)]
+    #[case("cargo test", vec!["^cargo.*".into()], vec![], true)]
+    #[case("cargo test", vec![], vec!["^cargo.*".into()], false)]
+    #[case("cargo test", vec!["^cargo.*".into()], vec!["^cargo test$".into()], false)]
+    #[case("cp some/file.txt", vec!["^cp .*".into()], vec!["^.*rm.*$".into()], true)]
     fn test_is_command_safe(
         #[case] command: &str,
         #[case] safe_patterns: Vec<String>,
         #[case] risky_patterns: Vec<String>,
         #[case] expected: bool
     ) {
-        // Create temp session file directory
-        let temp_dir = std::env::temp_dir().join("codem_test");
-        fs::create_dir_all(&temp_dir).unwrap();
+        let temp_dir = setup_test_dir();
 
         let tmp_projects = vec![Project::new(temp_dir.clone())];
 
         let config = ClientConfig::new(
             tmp_projects,
-            temp_dir.join("session.toml"),
+            temp_dir.join("session").join("session.toml"),
             safe_patterns,
             risky_patterns
         ).unwrap();
 
         assert_eq!(config.is_command_safe(command), expected);
 
-        fs::remove_dir_all(temp_dir).unwrap();
+        cleanup_test_dir(temp_dir);
     }
 
     #[test] 
     fn test_invalid_pattern() {
-        let temp_dir = std::env::temp_dir().join("codem_test");
-        fs::create_dir_all(&temp_dir).unwrap();
+        let temp_dir = setup_test_dir();
 
+        // Test empty pattern
         let result = ClientConfig::new(
             vec![Project::new(temp_dir.clone())],
-            temp_dir.join("session.toml"),  
-            vec!["".to_string()], // Empty pattern
+            temp_dir.join("session").join("session.toml"),  
+            vec!["".to_string()],
             vec![]
         );
+        assert!(matches!(result, Err(ConfigError::InvalidPattern { .. })));
 
+        // Test invalid regex pattern
+        let result = ClientConfig::new(
+            vec![Project::new(temp_dir.clone())],
+            temp_dir.join("session").join("session.toml"),  
+            vec!["(".to_string()],  // Invalid unclosed parenthesis
+            vec![]
+        );
         assert!(matches!(result, Err(ConfigError::InvalidPattern { .. })));
         
-        fs::remove_dir_all(temp_dir).unwrap();
+        cleanup_test_dir(temp_dir);
     }
 
     #[test]
