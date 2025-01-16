@@ -6,7 +6,6 @@ use std::io;
 
 #[derive(Default)]
 pub struct ReadOptions {
-    pub content_only: bool,
     pub count_lines: bool,
 }
 

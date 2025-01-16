@@ -26,9 +26,13 @@ pub async fn process_partial_write(
 
     fs::write(path, &output).await?;
 
+    // Re-gather metadata for the written path, so we can get the new modified timestamp
+    let metadata = fs::metadata(path).await?;
+
     Ok(WriteResult {
         line_count: output.lines().count(),
         size: output.len(),
+        modified: metadata.modified().unwrap(),
         details: WriteResultDetails::Partial(PartialWriteResult {
             change_results: matches_out,
             full_content: if partial_writes.return_full_content {

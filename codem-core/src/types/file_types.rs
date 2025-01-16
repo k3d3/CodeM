@@ -47,6 +47,7 @@ pub enum WriteResultDetails {
 pub struct WriteResult {
     pub line_count: usize,
     pub size: usize,
+    pub modified: SystemTime,
     pub details: WriteResultDetails,
 }
 

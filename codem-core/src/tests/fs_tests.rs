@@ -25,7 +25,6 @@ async fn test_read_with_line_count() -> io::Result<()> {
     fs::write(&test_file, "line 1\nline 2\nline 3\n").await?;
 
     let (content, metadata) = read_file(&test_file, ReadOptions { 
-        content_only: false,
         count_lines: true,
     }).await?;
     

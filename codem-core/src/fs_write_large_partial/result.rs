@@ -6,10 +6,13 @@ pub fn create_result(
     output: &str,
     lines: &[&str],
     partial_write: &PartialWriteLarge,
+    metadata: &std::fs::Metadata,
 ) -> WriteResult {
+    
     WriteResult {
         line_count: output.lines().count(),
         size: output.len(),
+        modified: metadata.modified().unwrap(),
         details: WriteResultDetails::PartialLarge(PartialWriteLargeResult {
             line_number_start: start_line + 1,
             line_number_end: end_line + 1,

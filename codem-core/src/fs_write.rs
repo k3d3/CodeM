@@ -25,9 +25,14 @@ pub async fn write_file(
     match operation {
         WriteOperation::Full(contents) => {
             fs::write(path, &contents).await?;
+
+            // Re-gather metadata for the written path, so we can get the new modified timestamp
+            let metadata = fs::metadata(path).await?;
+
             let result = WriteResult {
                 line_count: contents.lines().count(),
                 size: contents.len(),
+                modified: metadata.modified().unwrap(),
                 details: WriteResultDetails::None,
             };
             Ok(result)

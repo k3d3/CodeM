@@ -34,7 +34,10 @@ pub async fn process_large_partial_write(
 
     fs::write(path, &output).await?;
 
-    Ok(create_result(start_line, end_line, &output, &lines, &partial_write))
+    // Re-gather metadata for the written path, so we can get the new modified timestamp
+    let metadata = fs::metadata(path).await?;
+
+    Ok(create_result(start_line, end_line, &output, &lines, &partial_write, &metadata))
 }
 
 fn replace_content(
