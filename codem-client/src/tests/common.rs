@@ -1,26 +1,28 @@
-use std::collections::HashMap;
+use std::fs;
 use std::path::Path;
-use std::sync::Arc;
 
-use crate::{config::{ClientConfig, CommandPattern}, Client, Project};
+use crate::{Client, Project, config::ClientConfig};
 
 pub fn create_test_client(base_path: impl AsRef<Path>) -> Client {
-    let mut projects = HashMap::new();
+    let tmp_dir = std::env::temp_dir().join("codem_test");
+    fs::create_dir_all(&tmp_dir).unwrap();
+
     let mut project = Project::new(base_path.as_ref().to_path_buf());
     project.allowed_paths = Some(vec![base_path.as_ref().to_path_buf()]);
-    projects.insert("test".to_string(), Arc::new(project));
+    let projects = vec![project];
     
     let config = ClientConfig::new(
         projects,
+        tmp_dir.join("session.toml"),
         vec![
             // Basic safe commands used in tests
-            CommandPattern { pattern: "echo".to_string(), is_regex: false }
+            "echo".to_string()
         ],
         vec![
             // Known risky commands
-            CommandPattern { pattern: ".*rm.*".to_string(), is_regex: true }
+            ".*rm.*".to_string()
         ]
-    );
+    ).unwrap();
 
     Client::new(config)
 }

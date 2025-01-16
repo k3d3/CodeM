@@ -1,8 +1,5 @@
 use std::path::Path;
-use crate::{
-    error::{ClientError, OperationError},
-    session::SessionManager,
-};
+use crate::{error::ClientError, session::SessionManager};
 
 impl SessionManager {
     pub fn check_path(&self, session_id: &str, path: &Path) -> Result<(), ClientError> {
@@ -27,10 +24,9 @@ impl SessionManager {
         }
 
         if !allowed {
-            return Err(OperationError::PathNotAllowed {
+            return Err(ClientError::PathNotAllowed {
                 path: path.to_path_buf(),
-            }
-            .into());
+            });
         }
 
         Ok(())

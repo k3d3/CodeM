@@ -1,11 +1,14 @@
+pub mod grep_error;
+pub mod config_error;
+pub use grep_error::GrepError;
+pub use config_error::ConfigError;
+
 use std::path::PathBuf;
 use error_set::error_set;
-pub mod grep_error;
-pub use grep_error::GrepError;
 use codem_core::error::{WriteError, CommandError};
 
 error_set! {
-    ClientError = SessionError || OperationError || {
+    ClientError = {
         #[display("File not found: {}", path.display())]
         FileNotFound { path: PathBuf },
         #[display("IO error: {0}")]
@@ -16,11 +19,6 @@ error_set! {
         WriteError(WriteError),
         #[display("Command error: {0}")]
         CommandError(CommandError),
-    };
-
-    #[derive(Clone)]
-    #[disable(Error)] 
-    SessionError = {
         #[display("Session not found: {id}")]
         SessionNotFound { id: Box<str> },
         #[display("Path not in project scope: {}", path.display())]
@@ -31,11 +29,8 @@ error_set! {
         ProjectNotFound { name: String },
         #[display("Invalid session ID: {name}")]
         InvalidSessionId{ name: String },
-    };
-
-    OperationError = {
         #[display("File not found: {}", path.display())]
-        FileNotFound { path: PathBuf },
+        FileNotReadable { path: PathBuf },
         #[display("File not read: {}", path.display())] 
         FileNotRead { path: PathBuf },
         #[display("Path not allowed: {}", path.display())]
@@ -46,11 +41,9 @@ error_set! {
         PathExists { path: PathBuf },
         #[display("Permission denied: {}", path.display())]
         PermissionDenied { path: PathBuf },
-        #[display("Timestamp mismatch for {}", path.display())]
-        TimestampMismatch { path: PathBuf },
-        #[display("IO error: {0}")]
-        IoError(std::io::Error),
+        #[display("Config error: {0}")]
+        ConfigError(ConfigError),
+        #[display("Grep error: {0}")]
+        GrepError(GrepError)
     };
 }
-
-impl std::error::Error for SessionError {}

@@ -1,8 +1,5 @@
 use std::{path::Path, time::SystemTime, sync::Arc};
-use crate::{
-    error::{ClientError, OperationError},
-    session::SessionManager,
-};
+use crate::{error::ClientError, session::SessionManager};
 
 impl SessionManager {
     pub fn update_timestamp(
@@ -32,23 +29,22 @@ impl SessionManager {
 
         session.file_timestamps.get(path)
             .copied()
-            .ok_or_else(|| OperationError::FileNotRead {
+            .ok_or_else(|| ClientError::FileNotRead {
                 path: path.to_path_buf(),
-            }.into())
+            })
     }
 
     pub fn check_timestamp(&self, session_id: &str, path: &Path) -> Result<(), ClientError> {
         let session = self.get_session(session_id)?;
 
         if let Some(stored) = session.file_timestamps.get(path) {
-            let metadata = path.metadata().map_err(OperationError::IoError)?;
-            let current = metadata.modified().map_err(OperationError::IoError)?;
+            let metadata = path.metadata().map_err(|e| ClientError::IoError(e))?;
+            let current = metadata.modified().map_err(|e| ClientError::IoError(e))?;
 
             if current != *stored {
-                return Err(OperationError::TimestampMismatch {
+                return Err(ClientError::TimestampMismatch {
                     path: path.to_path_buf(),
-                }
-                .into());
+                });
             }
         }
 

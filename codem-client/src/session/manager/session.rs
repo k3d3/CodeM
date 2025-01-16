@@ -1,6 +1,6 @@
 use std::{collections::HashMap, sync::Arc, path::PathBuf};
 use crate::{
-    error::{ClientError, SessionError},
+    error::ClientError,
     project::Project,
     session::{SessionId, SessionInfo, SessionManager},
 };
@@ -18,10 +18,8 @@ impl SessionManager {
     }
 
     pub async fn create_session(&self, project_name: &str) -> Result<SessionId, ClientError> {
-        let _project = self.projects.get(project_name).ok_or_else(|| {
-            SessionError::ProjectNotFound {
-                name: project_name.to_string()
-            }
+        let _project = self.projects.get(project_name).ok_or_else(|| ClientError::ProjectNotFound {
+            name: project_name.to_string()
         })?;
 
         let session_id = SessionId::new();
@@ -43,21 +41,15 @@ impl SessionManager {
 
     pub fn get_session(&self, session_id: &str) -> Result<Arc<SessionInfo>, ClientError> {
         let id = SessionId(session_id.to_string());
-        self.sessions.read().get(&id).cloned().ok_or_else(|| {
-            SessionError::SessionNotFound {
+        self.sessions.read().get(&id).cloned().ok_or_else(|| ClientError::SessionNotFound {
                 id: session_id.to_string().into_boxed_str(),
-            }
-            .into()
         })
     }
 
     pub fn get_project(&self, session_id: &str) -> Result<Arc<Project>, ClientError> {
         let session = self.get_session(session_id)?;
-        self.projects.get(&session.project_name).cloned().ok_or_else(|| {
-            SessionError::ProjectNotFound {
+        self.projects.get(&session.project_name).cloned().ok_or_else(|| ClientError::ProjectNotFound {
                 name: session.project_name.to_string()
-            }
-            .into()
         })
     }
 }

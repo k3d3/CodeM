@@ -10,6 +10,6 @@ pub use error::*;
 pub use types::*;
 pub use project::Project;
 pub use session::{SessionId, SessionInfo, SessionManager};
-pub use config::{CommandPattern, ClientConfig};
+pub use config::ClientConfig;
 #[cfg(test)]
 mod tests;
