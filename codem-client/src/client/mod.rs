@@ -1,32 +1,21 @@
 pub(crate) mod grep;
-pub(crate) mod file;
+pub(crate) mod read;
+pub mod write;
 
 use std::path::Path;
-use crate::error::GrepError;
+use crate::{
+    error::{ClientError, GrepError},
+    session::SessionManager,
+};
 use codem_core::types::*;
 
-use tokio::io;
-
-use anyhow::Result;
-
-#[derive(Default)]
 pub struct Client {
-    // Add client fields as needed
+    sessions: SessionManager,
 }
 
 impl Client {
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    pub async fn read_file(&self, _path: impl AsRef<Path>) -> Result<String> {
-        // TODO: Implement read_file
-        todo!()
-    }
-
-    pub async fn write_file(&self, _path: impl AsRef<Path>, _content: &str) -> Result<()> {
-        // TODO: Implement write_file  
-        todo!()  
+    pub fn new(sessions: SessionManager) -> Self {
+        Self { sessions }
     }
 
     pub async fn grep_file(
@@ -37,19 +26,16 @@ impl Client {
         grep::grep_file(path, pattern).await
     }
 
-    pub async fn list_directory(
-        &self,
-        path: impl AsRef<Path>,
-        options: ListOptions
-    ) -> io::Result<TreeEntry> {
-        file::list_directory(path, options).await
-    }
-
     pub async fn grep_codebase(
         &self,
         root_dir: impl AsRef<Path>,
         pattern: &str
     ) -> Result<Vec<GrepFileMatch>, GrepError> {
         grep::grep_codebase(root_dir, pattern).await
+    }
+
+    pub async fn create_session(&self, project_name: &str) -> Result<String, ClientError> {
+        let session_id = self.sessions.create_session(project_name).await?;
+        Ok(session_id.to_string())
     }
 }

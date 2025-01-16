@@ -19,8 +19,8 @@ impl SessionManager {
 
     pub async fn create_session(&self, project_name: &str) -> Result<SessionId, ClientError> {
         let _project = self.projects.get(project_name).ok_or_else(|| {
-            SessionError::SessionNotFound {
-                id: project_name.to_string(),
+            SessionError::ProjectNotFound {
+                name: project_name.to_string()
             }
         })?;
 
@@ -45,7 +45,7 @@ impl SessionManager {
         let id = SessionId(session_id.to_string());
         self.sessions.read().get(&id).cloned().ok_or_else(|| {
             SessionError::SessionNotFound {
-                id: session_id.to_string(),
+                id: session_id.to_string().into_boxed_str(),
             }
             .into()
         })
@@ -54,8 +54,8 @@ impl SessionManager {
     pub fn get_project(&self, session_id: &str) -> Result<Arc<Project>, ClientError> {
         let session = self.get_session(session_id)?;
         self.projects.get(&session.project_name).cloned().ok_or_else(|| {
-            SessionError::SessionNotFound {
-                id: session.project_name.clone(),
+            SessionError::ProjectNotFound {
+                name: session.project_name.to_string()
             }
             .into()
         })

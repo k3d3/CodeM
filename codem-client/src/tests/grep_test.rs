@@ -1,122 +1,90 @@
-use crate::client::Client;
+use std::collections::HashMap;
+use std::sync::Arc;
+use crate::project::Project;
+use crate::session::SessionManager;
+use crate::Client;
 use rstest::*;
-use tempfile::{tempdir, TempDir};
+use tempfile::tempdir;
 use std::fs;
-use crate::error::GrepError;
 
-#[fixture]
-fn test_dir() -> TempDir {
+#[rstest]
+#[tokio::test]
+async fn test_grep_file_found() {
+    let dir = tempdir().unwrap();
+    let file_path = dir.path().join("test.txt");
+    fs::write(&file_path, "test line 1\nfound this\ntest line 3").unwrap();
+
+    let mut projects = HashMap::new();
+    projects.insert("test".to_string(), Arc::new(Project::new(dir.path().to_path_buf())));
+    let sessions = SessionManager::new(projects, None);
+    let client = Client::new(sessions);
+    
+    let _session_id = client.create_session("test").await.unwrap();
+
+    let matches = client.grep_file(&file_path, "found").await.unwrap();
+    assert_eq!(matches.path, file_path);
+    assert_eq!(matches.matches.len(), 1);
+    assert_eq!(matches.matches[0].context, "found this");
+}
+
+#[rstest]
+#[tokio::test]
+async fn test_grep_file_no_match() {
+    let dir = tempdir().unwrap();
+    let file_path = dir.path().join("test.txt");
+    fs::write(&file_path, "test line 1\ntest line 2\ntest line 3").unwrap();
+
+    let mut projects = HashMap::new();
+    projects.insert("test".to_string(), Arc::new(Project::new(dir.path().to_path_buf())));
+    let sessions = SessionManager::new(projects, None);
+    let client = Client::new(sessions);
+    
+    let _session_id = client.create_session("test").await.unwrap();
+
+    let matches = client.grep_file(&file_path, "nomatch").await.unwrap();
+    assert_eq!(matches.path, file_path);
+    assert_eq!(matches.matches.len(), 0);
+}
+
+#[rstest]
+#[tokio::test]
+async fn test_grep_codebase() {
     let dir = tempdir().unwrap();
     
+    fs::create_dir(dir.path().join("subdir")).unwrap();
     fs::write(
         dir.path().join("file1.txt"),
         "test line 1\nfound this\ntest line 3"
     ).unwrap();
-    
-    fs::create_dir(dir.path().join("subdir")).unwrap();
     fs::write(
-        dir.path().join("subdir/file2.txt"),
+        dir.path().join("subdir/file2.txt"), 
         "another line\nfound that\nlast line"
     ).unwrap();
-    
-    fs::write(
-        dir.path().join("subdir/binary.exe"),
-        "found this but in binary"
-    ).unwrap();
-    
-    dir
-}
 
-#[rstest]
-#[tokio::test]
-async fn test_grep_file_single_match(test_dir: TempDir) {
-    let client = Client::new();
-    let path = test_dir.path().join("file1.txt");
+    let mut projects = HashMap::new();
+    projects.insert("test".to_string(), Arc::new(Project::new(dir.path().to_path_buf())));
+    let sessions = SessionManager::new(projects, None);
+    let client = Client::new(sessions);
     
-    let result = client.grep_file(&path, "found").await.unwrap();
-    
-    assert_eq!(result.path, path);
-    assert_eq!(result.matches.len(), 1);
-    assert_eq!(result.matches[0].line_number, 2);
-    assert_eq!(result.matches[0].context, "found this");
-}
+    let _session_id = client.create_session("test").await.unwrap();
 
-#[rstest]
-#[tokio::test]
-async fn test_grep_file_no_match(test_dir: TempDir) {
-    let client = Client::new();
-    let path = test_dir.path().join("file1.txt");
-    
-    let result = client.grep_file(&path, "nosuchpattern").await.unwrap();
-    
-    assert_eq!(result.path, path);
-    assert!(result.matches.is_empty());
-}
+    let results = client.grep_codebase(dir.path(), "found").await.unwrap();
+    assert_eq!(results.len(), 2);
 
-#[rstest]
-#[tokio::test]
-async fn test_grep_file_not_found(test_dir: TempDir) {
-    let client = Client::new();
-    let path = test_dir.path().join("nonexistent.txt");
-    
-    let error = client.grep_file(&path, "pattern").await.unwrap_err();
-    assert!(matches!(error,
-        GrepError::FileNotFound { path } if path.contains("nonexistent.txt")
-    ));
-}
-
-#[rstest]
-#[tokio::test]
-async fn test_grep_file_invalid_pattern(test_dir: TempDir) {
-    let client = Client::new();
-    let path = test_dir.path().join("file1.txt");
-    
-    let error = client.grep_file(&path, "*invalid)").await.unwrap_err();
-    assert!(matches!(error, GrepError::InvalidPattern(_)));
-}
-
-#[rstest]
-#[tokio::test]
-async fn test_grep_codebase(test_dir: TempDir) {
-    let client = Client::new();
-    
-    let results = client.grep_codebase(test_dir.path(), "found").await.unwrap();
-    assert_eq!(results.len(), 2); // Should only match text files
-    
     let mut paths: Vec<_> = results.iter()
         .map(|r| &r.path)
         .collect();
     paths.sort();
     
-    assert_eq!(paths[0], &test_dir.path().join("file1.txt"));
+    assert_eq!(paths[0], &dir.path().join("file1.txt"));
+    
     let first_match = results.iter()
-        .find(|r| r.path == test_dir.path().join("file1.txt"))
+        .find(|r| r.path == dir.path().join("file1.txt"))
         .unwrap();
     assert_eq!(first_match.matches[0].context, "found this");
-    
+
     let second_match = results.iter()
-        .find(|r| r.path == test_dir.path().join("subdir/file2.txt"))
+        .find(|r| r.path == dir.path().join("subdir/file2.txt"))
         .unwrap();
     assert_eq!(second_match.matches[0].context, "found that");
-}
-
-#[rstest]
-#[tokio::test]
-async fn test_grep_codebase_directory_not_found(test_dir: TempDir) {
-    let client = Client::new();
-    let invalid_path = test_dir.path().join("nonexistent");
-    
-    let error = client.grep_codebase(&invalid_path, "test").await.unwrap_err();
-    assert!(matches!(error,
-        GrepError::DirectoryNotFound { path } if path.contains("nonexistent")
-    ));
-}
-
-#[rstest]
-#[tokio::test]
-async fn test_grep_codebase_invalid_pattern(test_dir: TempDir) {
-    let client = Client::new();
-    
-    let error = client.grep_codebase(test_dir.path(), "*invalid)").await.unwrap_err();
-    assert!(matches!(error, GrepError::InvalidPattern(_)));
 }

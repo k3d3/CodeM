@@ -33,7 +33,7 @@ impl SessionManager {
         session.file_timestamps.get(path)
             .copied()
             .ok_or_else(|| OperationError::FileNotRead {
-                path: path.to_string_lossy().into_owned(),
+                path: path.to_path_buf(),
             }.into())
     }
 
@@ -46,7 +46,7 @@ impl SessionManager {
 
             if current != *stored {
                 return Err(OperationError::TimestampMismatch {
-                    path: path.to_string_lossy().into_owned(),
+                    path: path.to_path_buf(),
                 }
                 .into());
             }

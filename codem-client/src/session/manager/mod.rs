@@ -13,3 +13,19 @@ pub struct SessionManager {
     projects: HashMap<String, Arc<Project>>,
     sessions: RwLock<HashMap<SessionId, Arc<SessionInfo>>>,
 }
+
+impl Default for SessionManager {
+    fn default() -> Self {
+        Self {
+            projects: HashMap::new(),
+            sessions: RwLock::new(HashMap::new()),
+        }
+    }
+}
+
+#[cfg(test)]
+impl SessionManager {
+    pub fn new_test() -> Self {
+        Self::default()
+    }
+}

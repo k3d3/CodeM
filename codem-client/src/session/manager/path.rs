@@ -28,7 +28,7 @@ impl SessionManager {
 
         if !allowed {
             return Err(OperationError::PathNotAllowed {
-                path: path.to_string_lossy().into_owned(),
+                path: path.to_path_buf(),
             }
             .into());
         }

@@ -1,8 +1,6 @@
-use crate::client::Client;
 use codem_core::types::{ListOptions, TreeEntry};
 use std::fs;
 use tempfile::TempDir;
-use tokio::io;
 use rstest::*;
 
 #[fixture]
@@ -26,6 +24,7 @@ pub(crate) fn collect_files(entry: &TreeEntry) -> Vec<String> {
     for child in &entry.children {
         files.extend(collect_files(child));
     }
+    files.sort();
     files
 }
 

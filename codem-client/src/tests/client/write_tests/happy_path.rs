@@ -8,7 +8,7 @@ use crate::{Client, project::Project, session::SessionManager};
 
 #[rstest]
 #[tokio::test]
-async fn test_full_write() {
+async fn test_happy_path() {
     let temp_dir = TempDir::new().unwrap();
     let file_path = temp_dir.path().join("test.txt");
     fs::write(&file_path, "original content").unwrap();
@@ -29,7 +29,7 @@ async fn test_full_write() {
         .write_file(
             &session_id,
             &file_path,
-            "new content",
+            "new content"
         )
         .await
         .unwrap();

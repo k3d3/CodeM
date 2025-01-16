@@ -1,6 +1,11 @@
-use crate::{Client, ClientError};
+use crate::{
+    Client, project::Project,
+    session::SessionManager
+};
 use codem_core::types::Change;
 use std::fs;
+use std::sync::Arc;
+use std::collections::HashMap;
 use tempfile::TempDir;
 
 #[tokio::test]
@@ -9,16 +14,13 @@ async fn test_multiple_matches() {
     let file_path = temp_dir.path().join("test.txt");
     fs::write(&file_path, "test content test test").unwrap();
 
-    let config_path = temp_dir.path().join("config.toml");
-    let config = format!(
-        r#"[[projects]]
-        base_path = "{}" 
-        name = "test""#,
-        temp_dir.path().display()
-    );
-    fs::write(&config_path, &config).unwrap();
-
-    let client = Client::new(&config_path).await.unwrap();
+    let mut projects = HashMap::new();
+    let mut project = Project::new(temp_dir.path().to_path_buf());
+    project.allowed_paths = Some(vec![temp_dir.path().to_path_buf()]);
+    projects.insert("test".to_string(), Arc::new(project));
+    
+    let session_manager = SessionManager::new(projects, None);
+    let client = Client::new(session_manager);
     let session_id = client.create_session("test").await.unwrap();
 
     let _ = client.read_file(&session_id, &file_path).await.unwrap();
