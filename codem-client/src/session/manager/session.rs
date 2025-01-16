@@ -1,55 +1,38 @@
-use std::{collections::HashMap, sync::Arc, path::PathBuf};
+use std::sync::Arc;
+use tokio::sync::RwLock;
 use crate::{
-    error::ClientError,
     project::Project,
-    session::{SessionId, SessionInfo, SessionManager},
+    session::{SessionInfo, SessionId},
 };
-use parking_lot::RwLock;
+use super::{metadata::Metadata, path::PathValidator};
 
-impl SessionManager {
+pub struct Session {
+    pub id: String,
+    pub project: Arc<Project>,
+    pub metadata: Arc<RwLock<Metadata>>,
+    pub path_validator: PathValidator,
+}
+
+impl Session {
     pub fn new(
-        projects: HashMap<String, Arc<Project>>,
-        _persist_path: Option<PathBuf>,
+        id: String,
+        project: Arc<Project>,
+        metadata: Metadata,
+        path_validator: PathValidator,
     ) -> Self {
         Self {
-            projects,
-            sessions: RwLock::new(HashMap::new()),
+            id,
+            project,
+            metadata: Arc::new(RwLock::new(metadata)),
+            path_validator,
         }
     }
 
-    pub async fn create_session(&self, project_name: &str) -> Result<SessionId, ClientError> {
-        let _project = self.projects.get(project_name).ok_or_else(|| ClientError::ProjectNotFound {
-            name: project_name.to_string()
-        })?;
-
-        let session_id = SessionId::new();
-
-        let info = SessionInfo {
-            project_name: project_name.to_string(),
-            id: session_id.clone(),
-            file_timestamps: HashMap::new(),
-        };
-
-        self.sessions.write().insert(session_id.clone(), Arc::new(info));
-
-        Ok(session_id)
-    }
-
-    pub async fn list_sessions(&self) -> Vec<SessionInfo> {
-        self.sessions.read().values().map(|s| (**s).clone()).collect()
-    }
-
-    pub fn get_session(&self, session_id: &str) -> Result<Arc<SessionInfo>, ClientError> {
-        let id = SessionId(session_id.to_string());
-        self.sessions.read().get(&id).cloned().ok_or_else(|| ClientError::SessionNotFound {
-                id: session_id.to_string().into_boxed_str(),
-        })
-    }
-
-    pub fn get_project(&self, session_id: &str) -> Result<Arc<Project>, ClientError> {
-        let session = self.get_session(session_id)?;
-        self.projects.get(&session.project_name).cloned().ok_or_else(|| ClientError::ProjectNotFound {
-                name: session.project_name.to_string()
-        })
+    pub fn to_info(&self) -> SessionInfo {
+        SessionInfo {
+            id: SessionId(self.id.clone()),
+            project_name: self.project.name.clone(),
+            file_timestamps: std::collections::HashMap::new(),
+        }
     }
 }

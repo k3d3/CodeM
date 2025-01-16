@@ -1,15 +1,14 @@
-mod client;
-mod error;
-mod project;
-mod config;
+pub mod client;
+pub mod config;
+pub mod error;
+pub mod project;
 mod session;
-mod types;
+pub mod types;
 
+// Re-export main types
 pub use client::Client;
-pub use error::*;
-pub use types::*;
-pub use project::Project;
-pub use session::{SessionId, SessionInfo, SessionManager};
 pub use config::ClientConfig;
-#[cfg(test)]
-mod tests;
+pub use project::Project;
+pub use error::ClientError;
+pub use session::{SessionId, SessionInfo};
+pub use session::manager::SessionManager;

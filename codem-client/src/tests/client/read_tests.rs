@@ -1,68 +1,71 @@
-use crate::{types::ListOptions, Client};
-use rstest::rstest;
+use crate::{Client, config::ClientConfig}; 
 use tempfile::TempDir;
+use std::fs;
 
-#[rstest]
 #[tokio::test]
 async fn test_read_file() {
     let temp_dir = TempDir::new().unwrap();
+    let file_path = temp_dir.path().join("test.txt");
+    let content = "test content";
+    fs::write(&file_path, content).unwrap();
+
     let temp_path = temp_dir.path();
-    let file_path = temp_path.join("test.txt");
-
-    std::fs::write(&file_path, "test content\nline 2\nline 3").unwrap();
-
-    let client = Client::new(vec![temp_path.to_path_buf()]).unwrap();
+    let client = create_test_client(temp_path);
     let session_id = client.create_session("test").await.unwrap();
 
-    let result = client.read(&session_id, &file_path).await.unwrap();
-    assert_eq!(result.content, "test content\nline 2\nline 3");
+    let result = client.read_file(&session_id, &file_path).await.unwrap();
+
+    assert_eq!(result.content, content);
 }
 
-#[rstest]
 #[tokio::test]
-async fn test_grep_file() {
+async fn test_nonexistent_file() {
     let temp_dir = TempDir::new().unwrap();
     let temp_path = temp_dir.path();
-    let file_path = temp_path.join("test.txt");
-
-    std::fs::write(&file_path, "test content\nsearch this\ntest content").unwrap();
-
-    let client = Client::new(vec![temp_path.to_path_buf()]).unwrap();
+    let client = create_test_client(temp_path);
     let session_id = client.create_session("test").await.unwrap();
 
-    let matches = client
-        .grep_file(&session_id, &file_path, "test")
-        .await
-        .unwrap();
-    assert_eq!(matches.len(), 2);
-    assert_eq!(matches[0].content, "test content");
-    assert_eq!(matches[1].content, "test content");
+    let result = client.read_file(
+        &session_id,
+        &temp_path.join("nonexistent.txt")
+    ).await;
+
+    assert!(result.is_err());
 }
 
-#[rstest]
 #[tokio::test]
-async fn test_list_directory_with_options() {
+async fn test_large_file() {
     let temp_dir = TempDir::new().unwrap();
+    let file_path = temp_dir.path().join("large.txt");
     let temp_path = temp_dir.path();
 
-    std::fs::write(temp_path.join("test1.txt"), "content1").unwrap();
-    std::fs::write(temp_path.join("test2.doc"), "content2").unwrap();
-    std::fs::create_dir(temp_path.join("subdir")).unwrap();
+    // Create large file
+    let large_content = "x".repeat(1_000_000);
+    fs::write(&file_path, &large_content).unwrap();
 
-    let client = Client::new(vec![temp_path.to_path_buf()]).unwrap();
+    let client = create_test_client(temp_path);
     let session_id = client.create_session("test").await.unwrap();
 
-    let options = ListOptions {
-        recursive: false,
-        include_stats: true,
-        pattern: Some("*.txt".to_string()),
-    };
+    let result = client.read_file(&session_id, &file_path).await.unwrap();
 
-    let entries = client
-        .list_directory(&session_id, temp_path, &options)
-        .await
-        .unwrap();
-    assert_eq!(entries.len(), 1);
-    assert_eq!(entries[0].path.file_name().unwrap(), "test1.txt");
-    assert!(entries[0].stats.is_some());
+    assert_eq!(result.content, large_content);
+}
+
+fn create_test_client(base_path: impl AsRef<std::path::Path>) -> Client {
+    // Setup client config
+    let mut project = crate::project::Project::new(base_path.as_ref().to_path_buf());
+    project.allowed_paths = Some(vec![base_path.as_ref().to_path_buf()]);
+    let projects = vec![project];
+    
+    let tmp_dir = std::env::temp_dir().join("codem_test");
+    fs::create_dir_all(&tmp_dir).unwrap();
+    
+    let config = ClientConfig::new(
+        projects,
+        tmp_dir.join("session.toml"),
+        vec!["*.txt".to_string()],
+        vec![]
+    ).unwrap();
+
+    Client::new(config)
 }

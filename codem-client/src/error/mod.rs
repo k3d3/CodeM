@@ -28,7 +28,7 @@ error_set! {
         #[display("Project not found: {name}")]
         ProjectNotFound { name: String },
         #[display("Invalid session ID: {name}")]
-        InvalidSessionId{ name: String },
+        InvalidSessionId { name: String },
         #[display("File not found: {}", path.display())]
         FileNotReadable { path: PathBuf },
         #[display("File not read: {}", path.display())] 
@@ -44,6 +44,10 @@ error_set! {
         #[display("Config error: {0}")]
         ConfigError(ConfigError),
         #[display("Grep error: {0}")]
-        GrepError(GrepError)
+        GrepError(GrepError),
+        #[display("Test command not configured")]
+        TestCommandNotConfigured,
+        #[display("Test command failed: {message}")]
+        TestCommandFailed { message: String }
     };
 }

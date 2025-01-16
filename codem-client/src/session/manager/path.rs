@@ -1,34 +1,41 @@
 use std::path::Path;
-use crate::{error::ClientError, session::SessionManager};
+use crate::{error::ClientError, config::ClientConfig};
 
-impl SessionManager {
-    pub fn check_path(&self, session_id: &str, path: &Path) -> Result<(), ClientError> {
-        let project = self.get_project(session_id)?;
-        let mut allowed = false;
+#[derive(Clone)]
+pub struct PathValidator {
+    config: ClientConfig,
+}
 
-        if let Some(parent) = path.parent() {
-            if parent.starts_with(&project.base_path) {
-                allowed = true;
+impl PathValidator {
+    pub fn new(config: ClientConfig) -> Self {
+        Self { config }
+    }
+
+    pub fn validate_path(&self, path: &Path) -> Result<(), ClientError> {
+        // Convert to absolute path if relative
+        let path = if path.is_absolute() {
+            path.to_path_buf()
+        } else {
+            std::env::current_dir()?.join(path)
+        };
+
+        // Check if path is within any allowed directory
+        for project in self.config.projects.values() {
+            let base_path = &project.base_path;
+            if path.starts_with(base_path) {
+                return Ok(());
             }
-        }
 
-        if !allowed {
-            if let Some(allowed_paths) = &project.allowed_paths {
+            // Check additional allowed paths
+            if let Some(ref allowed_paths) = project.allowed_paths {
                 for allowed_path in allowed_paths {
                     if path.starts_with(allowed_path) {
-                        allowed = true;
-                        break;
+                        return Ok(());
                     }
                 }
             }
         }
 
-        if !allowed {
-            return Err(ClientError::PathNotAllowed {
-                path: path.to_path_buf(),
-            });
-        }
-
-        Ok(())
+        Err(ClientError::PathOutOfScope { path })
     }
 }

@@ -1,7 +1,6 @@
 use rstest::rstest;
 use tempfile::TempDir;
 use std::fs;
-
 use crate::tests::common::create_test_client;
 
 #[rstest]
@@ -11,10 +10,9 @@ async fn test_full_write() {
     let file_path = temp_dir.path().join("test.txt");
     fs::write(&file_path, "original content").unwrap();
 
-    let client = create_test_client(temp_dir.path());
+    let client = create_test_client(temp_dir.path(), None);
     let session_id = client.create_session("test").await.unwrap();
 
-    // Read first to cache timestamp
     client.read_file(&session_id, &file_path).await.unwrap();
 
     let result = client
@@ -22,6 +20,7 @@ async fn test_full_write() {
             &session_id,
             &file_path,
             "new content",
+            false
         )
         .await
         .unwrap();

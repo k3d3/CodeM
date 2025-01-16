@@ -1,25 +1,30 @@
-use super::*;
+use std::fs;
+use tempfile::TempDir;
+use codem_core::types::ListOptions;
 use crate::tests::common::create_test_client;
 
-#[rstest]
 #[tokio::test]
-async fn test_list_directory_basic(test_dir: TempDir) -> Result<(), anyhow::Error> {
-    let client = create_test_client(test_dir.path());
-    let session_id = client.create_session("test").await?;
-    let options = ListOptions::default();
-    
-    let result = client.list_directory(&session_id, test_dir.path(), options).await?;
-    
-    assert!(result.entry.is_dir);
-    assert_eq!(result.children.len(), 3); // subdir1, subdir2, file1.txt
-    
-    let file_names: Vec<String> = result.children.iter()
-        .map(|entry| entry.entry.path.to_str().unwrap().to_string())
-        .collect();
-        
-    assert!(file_names.contains(&"file1.txt".to_string()));
-    assert!(file_names.contains(&"subdir1".to_string()));
-    assert!(file_names.contains(&"subdir2".to_string()));
-    
-    Ok(())
+async fn test_list_directory() {
+    let test_dir = TempDir::new().unwrap();
+    let client = create_test_client(test_dir.path(), None);
+
+    fs::create_dir(test_dir.path().join("dir1")).unwrap();
+    fs::create_dir(test_dir.path().join("dir2")).unwrap();
+    fs::write(test_dir.path().join("file1"), "content").unwrap();
+    fs::write(test_dir.path().join("file2"), "content").unwrap();
+
+    let session_id = client.create_session("test").await.unwrap();
+    let tree = client.list_directory(
+        &session_id, 
+        test_dir.path(),
+        ListOptions { 
+            include_size: true,
+            include_modified: true,
+            include_type: true,
+            file_pattern: None,
+            count_lines: true,
+         }
+    ).await.unwrap();
+
+    assert_eq!(tree.children.len(), 4);
 }

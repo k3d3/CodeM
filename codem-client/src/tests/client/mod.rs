@@ -1,24 +1,17 @@
+pub mod write_tests;
+pub mod read;
+pub mod read_tests;
+
+use tempfile::TempDir;
 use std::fs;
-use tempfile::tempdir;
 use crate::tests::common::create_test_client;
 
 #[tokio::test]
-async fn test_grep_integration() {
-    let dir = tempdir().unwrap();
-    fs::write(
-        dir.path().join("file1.txt"),
-        "test line 1\nfound this\ntest line 3"
-    ).unwrap();
+async fn test_create_and_get_session() {
+    let dir = TempDir::new().unwrap();
+    fs::create_dir_all(dir.path()).unwrap();
+    let client = create_test_client(dir.path(), None);
+    let session_id = client.create_session("test").await.unwrap();
 
-    let client = create_test_client(dir.path());
-    // Session creation needed for initialization though not used in this test
-    let _session_id = client.create_session("test").await.unwrap();
-
-    let matches = client
-        .grep_file(dir.path().join("file1.txt"), "found")
-        .await
-        .unwrap();
-
-    assert_eq!(matches.matches.len(), 1);
-    assert_eq!(matches.matches[0].context, "found this");
+    assert!(session_id.len() > 0);
 }

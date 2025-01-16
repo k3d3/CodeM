@@ -16,6 +16,6 @@ async fn test_basic_list() {
     );
     fs::write(&config_path, &config).unwrap();
 
-    let client = Client::new(&config_path).await.unwrap();
+    let client = Client::new(&config_path).unwrap();
     let _session_id = client.create_session("test").await.unwrap();
 }
