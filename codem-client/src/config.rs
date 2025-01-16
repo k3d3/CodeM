@@ -96,7 +96,7 @@ mod tests {
     #[case("cargo test", vec!["cargo".into()], vec![], true)]
     #[case("cargo test", vec![], vec!["cargo".into()], false)]
     #[case("cargo test", vec!["cargo".into()], vec!["cargo".into()], false)]
-    #[case("rm -rf /", vec!["rm".into()], vec!["rm -rf".into()], false)]
+    #[case("big bad command", vec!["big".into()], vec!["big bad".into()], false)]
     fn test_is_command_safe(
         #[case] command: &str,
         #[case] safe_patterns: Vec<String>,
