@@ -1,33 +1,23 @@
-use crate::{
-    Client, project::Project,
-    session::SessionManager
-};
-use codem_core::types::Change;
 use std::fs;
-use std::sync::Arc;
-use std::collections::HashMap;
 use tempfile::TempDir;
+use codem_core::types::Change;
+use crate::tests::common::create_test_client;
 
 #[tokio::test]
 async fn test_pattern_not_found() {
     let temp_dir = TempDir::new().unwrap();
     let file_path = temp_dir.path().join("test.txt");
-    fs::write(&file_path, "content").unwrap();
+    fs::write(&file_path, "line1\nline2\nline3\n").unwrap();
 
-    let mut projects = HashMap::new();
-    let mut project = Project::new(temp_dir.path().to_path_buf());
-    project.allowed_paths = Some(vec![temp_dir.path().to_path_buf()]);
-    projects.insert("test".to_string(), Arc::new(project));
-    
-    let session_manager = SessionManager::new(projects, None);
-    let client = Client::new(session_manager);
+    let client = create_test_client(temp_dir.path());
     let session_id = client.create_session("test").await.unwrap();
 
-    let _ = client.read_file(&session_id, &file_path).await.unwrap();
+    // Read first to cache timestamp
+    client.read_file(&session_id, &file_path).await.unwrap();
 
     let changes = vec![Change {
-        old_str: "nonexistent".to_string(),
-        new_str: "new".to_string(),
+        new_str: "updated_line\n".to_string(),
+        old_str: "nonexistent\n".to_string(),
         allow_multiple_matches: false,
     }];
 
@@ -35,7 +25,7 @@ async fn test_pattern_not_found() {
         .write_file_partial(
             &session_id,
             &file_path,
-            changes,
+            changes
         )
         .await;
 

@@ -1,11 +1,7 @@
-use std::collections::HashMap;
-use std::sync::Arc;
-use crate::project::Project;
-use crate::session::SessionManager;
-use crate::Client;
 use rstest::*;
 use tempfile::tempdir;
 use std::fs;
+use crate::tests::common::create_test_client;
 
 #[rstest]
 #[tokio::test]
@@ -14,11 +10,7 @@ async fn test_grep_file_found() {
     let file_path = dir.path().join("test.txt");
     fs::write(&file_path, "test line 1\nfound this\ntest line 3").unwrap();
 
-    let mut projects = HashMap::new();
-    projects.insert("test".to_string(), Arc::new(Project::new(dir.path().to_path_buf())));
-    let sessions = SessionManager::new(projects, None);
-    let client = Client::new(sessions);
-    
+    let client = create_test_client(dir.path());
     let _session_id = client.create_session("test").await.unwrap();
 
     let matches = client.grep_file(&file_path, "found").await.unwrap();
@@ -34,11 +26,7 @@ async fn test_grep_file_no_match() {
     let file_path = dir.path().join("test.txt");
     fs::write(&file_path, "test line 1\ntest line 2\ntest line 3").unwrap();
 
-    let mut projects = HashMap::new();
-    projects.insert("test".to_string(), Arc::new(Project::new(dir.path().to_path_buf())));
-    let sessions = SessionManager::new(projects, None);
-    let client = Client::new(sessions);
-    
+    let client = create_test_client(dir.path());
     let _session_id = client.create_session("test").await.unwrap();
 
     let matches = client.grep_file(&file_path, "nomatch").await.unwrap();
@@ -61,11 +49,7 @@ async fn test_grep_codebase() {
         "another line\nfound that\nlast line"
     ).unwrap();
 
-    let mut projects = HashMap::new();
-    projects.insert("test".to_string(), Arc::new(Project::new(dir.path().to_path_buf())));
-    let sessions = SessionManager::new(projects, None);
-    let client = Client::new(sessions);
-    
+    let client = create_test_client(dir.path());
     let _session_id = client.create_session("test").await.unwrap();
 
     let results = client.grep_codebase(dir.path(), "found").await.unwrap();

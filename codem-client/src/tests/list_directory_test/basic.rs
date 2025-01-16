@@ -1,23 +1,10 @@
-use crate::Client;
 use super::*;
-use crate::{
-    session::SessionManager,
-    project::Project
-};
-use std::collections::HashMap;
-use std::sync::Arc;
+use crate::tests::common::create_test_client;
 
 #[rstest]
 #[tokio::test]
 async fn test_list_directory_basic(test_dir: TempDir) -> Result<(), anyhow::Error> {
-    let mut projects = HashMap::new();
-    let mut project = Project::new(test_dir.path().to_path_buf());
-    project.allowed_paths = Some(vec![test_dir.path().to_path_buf()]);
-    projects.insert("test".to_string(), Arc::new(project));
-    
-    let sessions = SessionManager::new(projects, None);
-    let client = Client::new(sessions);
-    
+    let client = create_test_client(test_dir.path());
     let session_id = client.create_session("test").await?;
     let options = ListOptions::default();
     

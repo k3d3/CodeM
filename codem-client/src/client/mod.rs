@@ -7,16 +7,22 @@ use std::path::Path;
 use crate::{
     error::{ClientError, GrepError},
     session::SessionManager,
+    config::ClientConfig,
 };
 use codem_core::types::*;
 
 pub struct Client {
     sessions: SessionManager,
+    config: ClientConfig,
 }
 
 impl Client {
-    pub fn new(sessions: SessionManager) -> Self {
-        Self { sessions }
+    pub fn new(config: ClientConfig) -> Self {
+        let sessions = SessionManager::new(config.projects.clone(), None);
+        Self {
+            sessions,
+            config,
+        }
     }
 
     pub async fn grep_file(

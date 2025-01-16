@@ -1,22 +1,18 @@
-use crate::{
-    Client,
-    session::SessionManager
-};
 use std::fs;
 use tempfile::TempDir;
+use crate::tests::common::create_test_client;
 
 #[tokio::test]
 async fn test_invalid_session() {
     let temp_dir = TempDir::new().unwrap();
-    let file_path = temp_dir.path().join("test.txt");
+    let file_path = temp_dir.path().join("test.txt"); 
     fs::write(&file_path, "test").unwrap();
 
-    let session_manager = SessionManager::new_test();
-    let client = Client::new(session_manager);
+    let client = create_test_client(temp_dir.path());
 
     let result = client
         .write_file_full(
-            "invalid",
+            "invalid-session",
             &file_path,
             "new",
         )
