@@ -26,7 +26,7 @@ async fn test_full_write() {
     client.read_file(&session_id, &file_path).await.unwrap();
 
     let result = client
-        .write_file(
+        .write_file_full(
             &session_id,
             &file_path,
             "new content",

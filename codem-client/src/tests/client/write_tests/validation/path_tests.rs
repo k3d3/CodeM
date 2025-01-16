@@ -23,7 +23,7 @@ async fn test_path_not_allowed() {
     let session_id = client.create_session("test").await.unwrap();
 
     let result = client
-        .write_file(
+        .write_file_full(
             &session_id,
             &disallowed_file,
             "new",

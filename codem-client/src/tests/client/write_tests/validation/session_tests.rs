@@ -15,7 +15,7 @@ async fn test_invalid_session() {
     let client = Client::new(session_manager);
 
     let result = client
-        .write_file(
+        .write_file_full(
             "invalid",
             &file_path,
             "new",
