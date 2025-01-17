@@ -91,13 +91,13 @@ impl Metadata {
 
         session_stamps.get(&path)
             .cloned()
-            .ok_or_else(|| ClientError::InvalidPath { path })
+            .ok_or(ClientError::InvalidPath { path })
     }
 
     pub fn update_timestamp(&mut self, session_id: &str, path: &Path, timestamp: SystemTime) -> Result<(), ClientError> {
         let session_stamps = self.timestamps
             .entry(session_id.to_string())
-            .or_insert_with(HashMap::new);
+            .or_default();
 
         session_stamps.insert(path.to_path_buf(), timestamp);
         self.save_file()?;

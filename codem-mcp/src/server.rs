@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use std::path::PathBuf;
 use codem_client::{Client, ClientConfig};
 use jsonrpc_stdio_server::jsonrpc_core::{IoHandler, Params, Value, Result};
 use serde::Deserialize;
@@ -28,6 +29,18 @@ impl MCP {
                     "text": json!({
                         "session_id": session_id
                     }).to_string()
+                }]
+            }))
+            .map_err(|e| McpError::Client(e).into())
+    }
+
+    pub async fn read_file(&self, session_id: String, path: PathBuf) -> Result<Value> {
+        self.client.read_file(&session_id, &path)
+            .await
+            .map(|content| json!({
+                "content": [{
+                    "type": "text",
+                    "text": content
                 }]
             }))
             .map_err(|e| McpError::Client(e).into())
@@ -82,6 +95,17 @@ pub async fn serve(config: ClientConfig) -> Result<()> {
                         .and_then(|v| v.as_str())
                         .ok_or_else(|| jsonrpc_stdio_server::jsonrpc_core::Error::invalid_params("missing project parameter"))?;
                     mcp.create_session(project.to_string()).await
+                },
+                "read_file" => {
+                    let session_id = call.arguments.get("session_id")
+                        .and_then(|v| v.as_str())
+                        .ok_or_else(|| jsonrpc_stdio_server::jsonrpc_core::Error::invalid_params("missing session_id parameter"))?;
+                        
+                    let path = call.arguments.get("path")
+                        .and_then(|v| v.as_str())
+                        .ok_or_else(|| jsonrpc_stdio_server::jsonrpc_core::Error::invalid_params("missing path parameter"))?;
+                        
+                    mcp.read_file(session_id.to_string(), PathBuf::from(path)).await
                 },
                 _ => Err(jsonrpc_stdio_server::jsonrpc_core::Error::method_not_found())
             }

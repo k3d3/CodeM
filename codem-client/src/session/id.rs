@@ -1,24 +1,25 @@
 use std::fmt;
 use rand::seq::SliceRandom;
 
-use self::words::{ADJECTIVES, NOUNS};
-
 pub(crate) mod words;
+use self::words::{ADJECTIVES, NOUNS};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SessionId(pub String);
 
+impl Default for SessionId {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl SessionId {
     pub fn new() -> Self {
         let mut rng = rand::thread_rng();
-        
-        // Keep trying until we get a unique combination
-        loop {
-            let adj = ADJECTIVES.choose(&mut rng).unwrap();
-            let noun = NOUNS.choose(&mut rng).unwrap();
-            let id = format!("{}-{}", adj, noun);
-            return Self(id);
-        }
+        let adj = ADJECTIVES.choose(&mut rng).unwrap();
+        let noun = NOUNS.choose(&mut rng).unwrap();
+        let id = format!("{}-{}", adj, noun);
+        Self(id)
     }
 
     pub fn as_str(&self) -> &str {

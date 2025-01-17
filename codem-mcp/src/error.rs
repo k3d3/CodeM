@@ -1,5 +1,5 @@
-use thiserror::Error;
 use jsonrpc_stdio_server::jsonrpc_core::{Error as RpcError, ErrorCode};
+use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum McpError {

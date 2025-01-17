@@ -1,12 +1,21 @@
 pub mod session;
 
-use serde_json::{json, Value};
+use serde_json::json;
+use jsonrpc_stdio_server::jsonrpc_core::Value;
 
-/// Get all available tools
 pub fn list_tools() -> Value {
-    let tools = vec![
-        session::tool_spec(),
-        // Add more tools here
-    ];
-    json!({ "tools": tools })
+    json!({
+        "tools": [
+            {
+                "name": "create_session",
+                "description": "Create a new Codem session for a project",
+                "inputSchema": session::create_session_schema()
+            },
+            {
+                "name": "read_file",
+                "description": "Read a file's contents", 
+                "inputSchema": session::read_file_schema()
+            }
+        ]
+    })
 }

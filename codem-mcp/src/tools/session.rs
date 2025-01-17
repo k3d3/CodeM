@@ -1,18 +1,31 @@
-use serde_json::{json, Value};
+use serde_json::json;
 
-pub fn tool_spec() -> Value {
+pub fn create_session_schema() -> serde_json::Value {
     json!({
-        "name": "create_session",
-        "description": "Create a new Codem session for a project",
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "project": {
-                    "type": "string",
-                    "description": "Name of the project to create a session for"
-                }
+        "type": "object",
+        "properties": {
+            "project": {
+                "type": "string",
+                "description": "Project name to create session for"
+            }
+        },
+        "required": ["project"]
+    })
+}
+
+pub fn read_file_schema() -> serde_json::Value {
+    json!({
+        "type": "object",
+        "properties": {
+            "session_id": {
+                "type": "string",
+                "description": "Session ID to use for reading"
             },
-            "required": ["project"]
-        }
+            "path": {
+                "type": "string",
+                "description": "Path to file (relative to project root)"
+            }
+        },
+        "required": ["session_id", "path"]
     })
 }
