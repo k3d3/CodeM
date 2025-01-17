@@ -34,10 +34,9 @@ proptest! {
             fs::write(&file_path, &content).await.unwrap();
 
             let pattern = RegexBuilder::new("test").build().unwrap();
-            for context in 0..=5 {
+            for context_lines in 0..=5 {
                 let options = GrepOptions {
-                    context_before: context,
-                    context_after: context,
+                    context_lines,
                     ..Default::default()
                 };
                 let _ = grep_file(&file_path, &pattern, &options).await;

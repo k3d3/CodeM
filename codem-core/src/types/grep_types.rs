@@ -4,8 +4,7 @@ use std::path::PathBuf;
 pub struct GrepOptions {
     pub pattern: String,
     pub case_sensitive: bool,
-    pub context_before: usize,
-    pub context_after: usize,
+    pub context_lines: usize,
     pub file_pattern: Option<String>,
 }
 

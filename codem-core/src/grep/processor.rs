@@ -12,8 +12,8 @@ pub async fn grep_file(path: impl AsRef<Path>, pattern: &Regex, options: &GrepOp
 
     for (line_num, line) in lines.iter().enumerate() {
         if pattern.is_match(line) {
-            let context_start = line_num.saturating_sub(options.context_before);
-            let context_end = usize::min(line_num + options.context_after + 1, lines.len());
+            let context_start = line_num.saturating_sub(options.context_lines);
+            let context_end = usize::min(line_num + options.context_lines + 1, lines.len());
             let context = lines[context_start..context_end].join("\n");
 
             matches.push(GrepMatch {

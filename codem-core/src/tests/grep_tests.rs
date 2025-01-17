@@ -41,8 +41,7 @@ mod tests {
             temp.path(),
             &pattern,
             GrepOptions {
-                context_before: 1,
-                context_after: 1,
+                context_lines: 1,
                 ..Default::default()
             },
         ).await.unwrap();

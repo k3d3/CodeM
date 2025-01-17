@@ -1,5 +1,4 @@
 pub mod command;
-pub mod file;
 pub mod read;
 pub mod write;
 
