@@ -2,5 +2,5 @@
 members = [
     "codem-core",
     "codem-client"
-]
+, "codem-mcp"]
 resolver = "2"

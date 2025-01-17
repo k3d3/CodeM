@@ -1,0 +1,21 @@
+# Project configuration
+[[projects]]
+# Name used to identify the project when creating sessions
+name = "test"
+# Root directory for the project - all file operations will be relative to this
+path = "/home/main/src/claude/test"
+# File for storing session data
+session_file = "/home/main/b/codem_sessions.toml"
+
+# List of safe command patterns (regex)
+safe_patterns = [
+    "^echo [a-zA-Z0-9_-]+$",  # Allow basic echo commands 
+    "^grep -r \".*\" .*$",    # Allow recursive grep
+    "^ls( -[a-zA-Z]+)?$"      # Allow ls with optional flags
+]
+
+# List of risky command patterns (regex) that require extra confirmation
+risky_patterns = [
+    "^rm .*",           # Any rm command
+    "^git (push|pull)"  # Git remote operations
+]
