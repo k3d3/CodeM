@@ -38,10 +38,23 @@ impl Mcp {
         self.client.read_file(&session_id, &path)
             .await
             .map(|(content, metadata)| json!({
-                "content": [{
-                    "type": "text",
-                    "text": {"content": content, "line_count": metadata.line_count, "bytes": metadata.size}
-                }]
+                "content": [
+                    {
+                        "type": "text",
+                        "text": content
+                    },
+                    {
+                        "type": "text",
+                        "text": format!(
+                            "[METADATA]
+SIZE_BYTES={}
+LINE_COUNT={}
+[/METADATA]",
+                            metadata.size.unwrap_or(0),
+                            metadata.line_count.unwrap_or(0)
+                        )
+                    }
+                ]
             }))
             .map_err(|e| McpError::Client(e).into())
     }
