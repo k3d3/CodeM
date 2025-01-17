@@ -1,11 +1,12 @@
 pub mod session;
-pub mod files;
 pub mod list;
+pub mod read;
+pub mod grep;
 
 use serde_json::json;
+use serde::Deserialize;
 use jsonrpc_stdio_server::jsonrpc_core::{Value, Result};
 use crate::server::Mcp;
-use serde::Deserialize;
 use codem_core::types::ListOptions;
 
 #[derive(Deserialize)]
@@ -25,7 +26,7 @@ pub fn list_tools() -> Value {
             {
                 "name": "read_file",
                 "description": "Read a file's contents", 
-                "inputSchema": files::read_file_schema()
+                "inputSchema": read::read_file_schema()
             },
             {
                 "name": "list_directory",
@@ -35,12 +36,12 @@ pub fn list_tools() -> Value {
             {
                 "name": "grep_file",
                 "description": "Search for a pattern in a specific file",
-                "inputSchema": files::grep_file_schema()
+                "inputSchema": grep::grep_file_schema()
             },
             {
                 "name": "grep_codebase",
                 "description": "Search for a pattern across multiple files",
-                "inputSchema": files::grep_codebase_schema()
+                "inputSchema": grep::grep_codebase_schema()
             }
         ]
     })
@@ -63,7 +64,7 @@ pub async fn handle_tool_call(mcp: &Mcp, call: ToolCall) -> Result<Value> {
                 .and_then(|v| v.as_str())
                 .ok_or_else(|| jsonrpc_stdio_server::jsonrpc_core::Error::invalid_params("missing path parameter"))?;
                 
-            files::read_file(mcp, session_id, path).await
+            read::read_file(mcp, session_id, path).await
         },
         "list_directory" => {
             let session_id = call.arguments.get("session_id")
@@ -104,7 +105,7 @@ pub async fn handle_tool_call(mcp: &Mcp, call: ToolCall) -> Result<Value> {
                 .and_then(|v| v.as_u64())
                 .unwrap_or(0) as usize;
 
-            files::grep_file(mcp, session_id, path, pattern, case_sensitive, context_lines).await
+            grep::grep_file(mcp, session_id, path, pattern, case_sensitive, context_lines).await
         },
         "grep_codebase" => {
             let session_id = call.arguments.get("session_id")
@@ -129,8 +130,8 @@ pub async fn handle_tool_call(mcp: &Mcp, call: ToolCall) -> Result<Value> {
                 .and_then(|v| v.as_u64())
                 .unwrap_or(0) as usize;
 
-            files::grep_codebase(mcp, session_id, path, file_pattern, pattern, case_sensitive, context_lines).await
+            grep::grep_codebase(mcp, session_id, path, file_pattern, pattern, case_sensitive, context_lines).await
         },
-        _ => Err(jsonrpc_stdio_server::jsonrpc_core::Error::method_not_found())
+        _ => Ok(crate::error::format_error_response(format!("Unknown tool: {}", call.name)))
     }
 }

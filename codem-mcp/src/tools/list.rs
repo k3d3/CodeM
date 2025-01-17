@@ -1,7 +1,7 @@
 use serde_json::json;
 use jsonrpc_stdio_server::jsonrpc_core::{Result, Value};
 use std::path::PathBuf;
-use crate::server::Mcp;
+use crate::{server::Mcp, error::format_error_response};
 use codem_core::types::ListOptions;
 
 pub fn list_directory_schema() -> Value {
@@ -100,20 +100,22 @@ fn format_tree_entry(entry: &codem_core::types::TreeEntry, include_stats: bool) 
 
 pub async fn list_directory(mcp: &Mcp, session_id: &str, path: Option<&str>, options: ListOptions) -> Result<Value> {
     let path = path.map(PathBuf::from);
-    
     let include_stats = options.count_lines || options.include_size;
-    let result = mcp.client.list_directory(session_id, path.as_deref(), options.clone())
-        .await
-        .map_err(|e| jsonrpc_stdio_server::jsonrpc_core::Error::from(crate::error::McpError::Client(e)))?;
-
-    let formatted = format_tree_entry(&result, include_stats);
-
-    Ok(json!({
-        "content": [
-            {
-                "type": "text",
-                "text": formatted
+    
+    match mcp.client.list_directory(session_id, path.as_deref(), options.clone()).await {
+        Ok(result) => {
+            let formatted = format_tree_entry(&result, include_stats);
+            if formatted.is_empty() {
+                Ok(format_error_response("Directory is empty".to_string()))
+            } else {
+                Ok(json!({
+                    "content": [{
+                        "type": "text",
+                        "text": formatted
+                    }]
+                }))
             }
-        ]
-    }))
+        },
+        Err(e) => Ok(format_error_response(format!("Failed to list directory: {}", e)))
+    }
 }
