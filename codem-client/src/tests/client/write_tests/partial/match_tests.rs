@@ -10,6 +10,7 @@ async fn test_partial_match() {
     let file_content = "line1\nline2\nline3\n";
 
     let temp_dir = TempDir::new().unwrap();
+    fs::create_dir_all(temp_dir.path().join("session")).unwrap();
     let file_path = temp_dir.path().join("test.txt");
     fs::write(&file_path, file_content).unwrap();
 

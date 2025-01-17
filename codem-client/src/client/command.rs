@@ -15,6 +15,11 @@ impl crate::Client {
         // cwd is project base_path
         let cwd = cwd.or(Some(session.project.base_path.as_path()));
 
+        // Check command safety and raise if unsafe
+        let is_safe = self.sessions.config().is_command_safe(command);
+        if !is_safe {
+            return Err(ClientError::UnsafeCommand { command: command.to_string() });
+        }
 
         let output = run_command(
             command,

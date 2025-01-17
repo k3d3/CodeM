@@ -1,7 +1,9 @@
-use crate::{Client, config::ClientConfig}; 
+use crate::tests::common::create_test_client;
 use tempfile::TempDir;
 use std::fs;
+use rstest::rstest;
 
+#[rstest]
 #[tokio::test]
 async fn test_read_file() {
     let temp_dir = TempDir::new().unwrap();
@@ -10,19 +12,27 @@ async fn test_read_file() {
     fs::write(&file_path, content).unwrap();
 
     let temp_path = temp_dir.path();
-    let client = create_test_client(temp_path);
+    let client = create_test_client(temp_path, None);
     let session_id = client.create_session("test").await.unwrap();
 
+    // Reading should succeed and match contents
     let result = client.read_file(&session_id, &file_path).await.unwrap();
+    assert_eq!(result, content);
 
-    assert_eq!(result.content, content);
+    // Modify file externally
+    let new_content = "modified content";
+    fs::write(&file_path, new_content).unwrap();
+    
+    // Read should succeed with new content since reads don't check timestamps
+    let result2 = client.read_file(&session_id, &file_path).await.unwrap();
+    assert_eq!(result2, new_content);
 }
 
 #[tokio::test]
 async fn test_nonexistent_file() {
     let temp_dir = TempDir::new().unwrap();
     let temp_path = temp_dir.path();
-    let client = create_test_client(temp_path);
+    let client = create_test_client(temp_path, None);
     let session_id = client.create_session("test").await.unwrap();
 
     let result = client.read_file(
@@ -43,29 +53,10 @@ async fn test_large_file() {
     let large_content = "x".repeat(1_000_000);
     fs::write(&file_path, &large_content).unwrap();
 
-    let client = create_test_client(temp_path);
+    let client = create_test_client(temp_path, None);
     let session_id = client.create_session("test").await.unwrap();
 
     let result = client.read_file(&session_id, &file_path).await.unwrap();
 
-    assert_eq!(result.content, large_content);
-}
-
-fn create_test_client(base_path: impl AsRef<std::path::Path>) -> Client {
-    // Setup client config
-    let mut project = crate::project::Project::new(base_path.as_ref().to_path_buf());
-    project.allowed_paths = Some(vec![base_path.as_ref().to_path_buf()]);
-    let projects = vec![project];
-    
-    let tmp_dir = std::env::temp_dir().join("codem_test");
-    fs::create_dir_all(&tmp_dir).unwrap();
-    
-    let config = ClientConfig::new(
-        projects,
-        tmp_dir.join("session.toml"),
-        vec!["*.txt".to_string()],
-        vec![]
-    ).unwrap();
-
-    Client::new(config)
+    assert_eq!(result, large_content);
 }

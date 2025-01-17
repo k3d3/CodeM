@@ -86,10 +86,12 @@ impl ClientConfig {
     /// Check if a command is safe to execute
     ///
     /// A command is considered safe if:
-    /// 1. It doesn't match any risky patterns AND
-    /// 2. It matches at least one safe pattern
+    /// 1. It matches at least one safe pattern AND
+    /// 2. It doesn't match any risky patterns
+    /// 
+    /// Otherwise, the command is risky.
     pub fn is_command_safe(&self, command: &str) -> bool {
-        // If command matches any risky pattern, it's not safe
+        // First check risky patterns - if any match, command is not safe
         for pattern in &self.risky_patterns {
             if let Ok(re) = Regex::new(pattern) {
                 if re.is_match(command) {
@@ -98,7 +100,7 @@ impl ClientConfig {
             }
         }
 
-        // Command must match at least one safe pattern
+        // Then check safe patterns - must match at least one
         self.safe_patterns.iter().any(|p| {
             if let Ok(re) = Regex::new(p) {
                 re.is_match(command)

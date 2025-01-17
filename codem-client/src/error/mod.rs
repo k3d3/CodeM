@@ -58,5 +58,9 @@ error_set! {
         TomlDeserializeError(toml::de::Error),
         #[display("Toml serialize error: {0}")]
         TomlSerializeError(toml::ser::Error),
+        #[display("Command not recognized: {command}")]
+        InvalidCommand { command: String },
+        #[display("Command requires timeout: {command}")]
+        UnsafeCommand { command: String },
     };
 }

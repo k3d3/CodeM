@@ -7,6 +7,7 @@ use crate::tests::common::create_test_client;
 #[tokio::test]
 async fn test_full_write() {
     let temp_dir = TempDir::new().unwrap();
+    fs::create_dir_all(temp_dir.path().join("session")).unwrap();
     let file_path = temp_dir.path().join("test.txt");
     fs::write(&file_path, "original content").unwrap();
 

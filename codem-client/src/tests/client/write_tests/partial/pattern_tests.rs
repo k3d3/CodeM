@@ -7,6 +7,7 @@ use crate::tests::common::create_test_client;
 #[tokio::test]
 async fn test_partial_multiple_matches() {
     let temp_dir = TempDir::new().unwrap();
+    fs::create_dir_all(temp_dir.path().join("session")).unwrap();
     let file_path = temp_dir.path().join("test.txt");
     fs::write(&file_path, "line\nline\nline\n").unwrap();
 

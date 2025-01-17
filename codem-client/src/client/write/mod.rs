@@ -24,11 +24,25 @@ impl Client {
         // Validate the path
         self.sessions.check_path(session_id, &absolute_path).await?;
         
+        // First check if the file exists
+        if !absolute_path.exists() {
+            return Err(ClientError::FileNotFound { path: absolute_path });
+        }
+
         // Get stored timestamp
         let stored_timestamp = self.sessions.get_timestamp(session_id, &absolute_path).await?;
-        
+
         // Get current file state
-        let (current_content, metadata) = codem_core::fs_read::read_file(&absolute_path, ReadOptions::default()).await?;
+        let read_result = codem_core::fs_read::read_file(&absolute_path, ReadOptions::default()).await;
+        
+        // Handle file errors
+        let (current_content, metadata) = match read_result {
+            Ok(result) => result,
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+                return Err(ClientError::FileNotFound { path: absolute_path });
+            }
+            Err(e) => return Err(ClientError::IoError(e))
+        };
 
         // Get current timestamp if available
         let current_timestamp = metadata.modified.ok_or_else(|| ClientError::IoError(
@@ -77,12 +91,26 @@ impl Client {
         
         // Validate the path
         self.sessions.check_path(session_id, &absolute_path).await?;
+
+        // First check if the file exists
+        if !absolute_path.exists() {
+            return Err(ClientError::FileNotFound { path: absolute_path });
+        }
         
         // Get stored timestamp
         let stored_timestamp = self.sessions.get_timestamp(session_id, &absolute_path).await?;
         
         // Get current file state
-        let (current_content, metadata) = codem_core::fs_read::read_file(&absolute_path, ReadOptions::default()).await?;
+        let read_result = codem_core::fs_read::read_file(&absolute_path, ReadOptions::default()).await;
+        
+        // Handle file errors
+        let (current_content, metadata) = match read_result {
+            Ok(result) => result,
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+                return Err(ClientError::FileNotFound { path: absolute_path });
+            }
+            Err(e) => return Err(ClientError::IoError(e))
+        };
 
         // Get current timestamp if available
         let current_timestamp = metadata.modified.ok_or_else(|| ClientError::IoError(
@@ -117,7 +145,7 @@ impl Client {
         ).await?;
 
         // Update timestamp after successful write
-            self.sessions.update_timestamp(session_id, &absolute_path, result.modified).await?;
+        self.sessions.update_timestamp(session_id, &absolute_path, result.modified).await?;
 
         Ok(result)
     }
@@ -139,12 +167,26 @@ impl Client {
         
         // Validate the path
         self.sessions.check_path(session_id, &absolute_path).await?;
+
+        // First check if the file exists
+        if !absolute_path.exists() {
+            return Err(ClientError::FileNotFound { path: absolute_path });
+        }
         
         // Get stored timestamp
         let stored_timestamp = self.sessions.get_timestamp(session_id, &absolute_path).await?;
         
         // Get current file state
-        let (current_content, metadata) = codem_core::fs_read::read_file(&absolute_path, ReadOptions::default()).await?;
+        let read_result = codem_core::fs_read::read_file(&absolute_path, ReadOptions::default()).await;
+        
+        // Handle file errors
+        let (current_content, metadata) = match read_result {
+            Ok(result) => result,
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+                return Err(ClientError::FileNotFound { path: absolute_path });
+            }
+            Err(e) => return Err(ClientError::IoError(e))
+        };
 
         // Get current timestamp if available
         let current_timestamp = metadata.modified.ok_or_else(|| ClientError::IoError(
@@ -180,7 +222,7 @@ impl Client {
         ).await?;
 
         // Update timestamp after successful write
-            self.sessions.update_timestamp(session_id, &absolute_path, result.modified).await?;
+        self.sessions.update_timestamp(session_id, &absolute_path, result.modified).await?;
 
         Ok(result)
     }

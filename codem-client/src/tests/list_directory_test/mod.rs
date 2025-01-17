@@ -1,4 +1,3 @@
-use codem_core::types::{ListOptions, TreeEntry};
 use std::fs;
 use tempfile::TempDir;
 use rstest::*;
@@ -14,18 +13,6 @@ pub(crate) fn test_dir() -> TempDir {
     fs::write(dir.path().join("subdir2/file3.rs"), "content3").unwrap();
     
     dir
-}
-
-pub(crate) fn collect_files(entry: &TreeEntry) -> Vec<String> {
-    let mut files = Vec::new();
-    if !entry.entry.is_dir {
-        files.push(entry.entry.path.to_str().unwrap().to_string());
-    }
-    for child in &entry.children {
-        files.extend(collect_files(child));
-    }
-    files.sort();
-    files
 }
 
 mod basic;

@@ -75,4 +75,8 @@ impl SessionManager {
         let session = self.get_session(session_id).await?;
         session.update_timestamp(path, timestamp).await
     }
+
+    pub fn config(&self) -> &ClientConfig {
+        &self.config
+    }
 }
