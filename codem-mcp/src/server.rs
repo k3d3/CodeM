@@ -37,10 +37,10 @@ impl Mcp {
     pub async fn read_file(&self, session_id: String, path: PathBuf) -> Result<Value> {
         self.client.read_file(&session_id, &path)
             .await
-            .map(|content| json!({
+            .map(|(content, metadata)| json!({
                 "content": [{
                     "type": "text",
-                    "text": content
+                    "text": {"content": content, "line_count": metadata.line_count, "bytes": metadata.size}
                 }]
             }))
             .map_err(|e| McpError::Client(e).into())

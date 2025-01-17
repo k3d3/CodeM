@@ -16,7 +16,7 @@ async fn test_read_file() {
     let session_id = client.create_session("test").await.unwrap();
 
     // Reading should succeed and match contents
-    let result = client.read_file(&session_id, &file_path).await.unwrap();
+    let (result, _metadata) = client.read_file(&session_id, &file_path).await.unwrap();
     assert_eq!(result, content);
 
     // Modify file externally
@@ -24,7 +24,7 @@ async fn test_read_file() {
     fs::write(&file_path, new_content).unwrap();
     
     // Read should succeed with new content since reads don't check timestamps
-    let result2 = client.read_file(&session_id, &file_path).await.unwrap();
+    let (result2, _metadata) = client.read_file(&session_id, &file_path).await.unwrap();
     assert_eq!(result2, new_content);
 }
 
@@ -56,7 +56,7 @@ async fn test_large_file() {
     let client = create_test_client(temp_path, None);
     let session_id = client.create_session("test").await.unwrap();
 
-    let result = client.read_file(&session_id, &file_path).await.unwrap();
+    let (result, _metadata) = client.read_file(&session_id, &file_path).await.unwrap();
 
     assert_eq!(result, large_content);
 }

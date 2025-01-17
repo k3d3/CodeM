@@ -1,7 +1,7 @@
 pub mod list;
 
 use std::path::Path;
-use codem_core::fs_ops::ReadOptions;
+use codem_core::{fs_ops::ReadOptions, types::FileMetadata};
 
 use crate::{Client, error::ClientError}; 
 
@@ -10,7 +10,7 @@ impl Client {
         &self,
         session_id: &str,
         path: &Path,
-    ) -> Result<String, ClientError> {
+    ) -> Result<(String, FileMetadata), ClientError> {
         // Get session to access project
         let session = self.sessions.get_session(session_id).await?;
         
@@ -28,6 +28,6 @@ impl Client {
             self.sessions.update_timestamp(session_id, &absolute_path, modified).await?;
         }
 
-        Ok(content)
+        Ok((content, metadata))
     }
 }

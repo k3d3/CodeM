@@ -28,7 +28,7 @@ async fn test_basic_read() -> Result<(), ClientError> {
     let client = Client::new(config);
     let session_id = client.create_session("test").await?;
 
-    let content = client.read_file(&session_id, &test_file).await?;
+    let (content, _metadata) = client.read_file(&session_id, &test_file).await?;
     assert_eq!(content, "test content");
 
     Ok(())
