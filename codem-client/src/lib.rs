@@ -5,6 +5,9 @@ pub mod project;
 mod session;
 pub mod types;
 
+#[cfg(test)]
+mod tests;
+
 // Re-export main types
 pub use client::Client;
 pub use config::ClientConfig;

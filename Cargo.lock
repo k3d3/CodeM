@@ -121,6 +121,7 @@ dependencies = [
  "anyhow",
  "codem-core",
  "error_set",
+ "lazy_static",
  "once_cell",
  "parking_lot",
  "path-absolutize",

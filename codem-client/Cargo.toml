@@ -8,6 +8,7 @@ description = "Client functionality for the codem code management tool"
 anyhow = "1.0.95"
 codem-core = { version = "0.1.0", path = "../codem-core" }
 error_set = { version = "0.8.5", features = ["tracing"] }
+lazy_static = "1.5.0"
 once_cell = "1.20.2"
 parking_lot = "0.12.3"
 path-absolutize = "3.1.1"
