@@ -32,8 +32,8 @@ async fn main() -> Result<()> {
     let config = toml_config.into_client_config()
         .context("Failed to create client config")?;
         
-    // Start server
-    server::serve(config)?;
+    // Start server - now async all the way through
+    server::serve(config).await?;
     
     Ok(())
 }
