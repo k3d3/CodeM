@@ -9,11 +9,11 @@ use crate::error::McpError;
 use crate::tools;
 
 /// MCP server state
-pub struct MCP {
+pub struct Mcp {
     client: Client,
 }
 
-impl MCP {
+impl Mcp {
     pub fn new(config: ClientConfig) -> Self {
         Self {
             client: Client::new(config)
@@ -49,7 +49,7 @@ impl MCP {
 
 /// Create and run MCP server with given config
 pub async fn serve(config: ClientConfig) -> Result<()> {
-    let mcp = Arc::new(MCP::new(config)); 
+    let mcp = Arc::new(Mcp::new(config)); 
     let mut io = IoHandler::default();
 
     // Register initialization
@@ -150,6 +150,6 @@ mod tests {
             vec![]
         ).unwrap();
 
-        let _mcp = MCP::new(config);
+        let _mcp = Mcp::new(config);
     }
 }

@@ -50,7 +50,7 @@ impl ClientConfig {
                 });
             }
             // Validate as regex
-            if let Err(_) = Regex::new(pattern) {
+            if Regex::new(pattern).is_err() {
                 return Err(ConfigError::InvalidPattern {
                     pattern: pattern.clone()
                 });
@@ -64,7 +64,7 @@ impl ClientConfig {
                 });
             }
             // Validate as regex
-            if let Err(_) = Regex::new(pattern) {
+            if Regex::new(pattern).is_err() {
                 return Err(ConfigError::InvalidPattern {
                     pattern: pattern.clone()
                 });
