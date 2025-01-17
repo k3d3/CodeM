@@ -4,7 +4,7 @@ pub mod write;
 
 use crate::{error::ClientError, config::ClientConfig};
 use crate::session::manager::SessionManager;
-use codem_core::types::{GrepMatch, GrepOptions};
+use codem_core::types::{GrepFileMatch, GrepOptions};
 use std::path::Path;
 
 pub struct Client {
@@ -29,7 +29,7 @@ impl Client {
         pattern: &str,
         case_sensitive: bool,
         context_lines: usize,
-    ) -> Result<Vec<GrepMatch>, ClientError> {
+    ) -> Result<Vec<GrepFileMatch>, ClientError> {
         let path = path.as_ref();
         
         // Get session to access project
@@ -50,12 +50,9 @@ impl Client {
             context_lines,
             ..Default::default()
         };
-        let match_result = codem_core::grep::grep_file(&absolute_path, &pattern, &opts).await?;
 
-        // Extract matches if they exist, otherwise return empty vec
-        let matches = match_result.map(|m| m.matches).unwrap_or_default();
-        
-        Ok(matches)
+        let result = codem_core::grep::grep_file(&absolute_path, &pattern, &opts).await?;
+        Ok(result.into_iter().collect())
     }
 
     pub async fn grep_codebase(
@@ -66,7 +63,7 @@ impl Client {
         pattern: &str,
         case_sensitive: bool,
         context_lines: usize,
-    ) -> Result<Vec<GrepMatch>, ClientError> {
+    ) -> Result<Vec<GrepFileMatch>, ClientError> {
         // Get session to access project
         let session = self.sessions.get_session(session_id).await?;
         
@@ -90,12 +87,7 @@ impl Client {
             context_lines
         };
         
-        let file_matches = codem_core::grep::grep_codebase(&absolute_path, &pattern, opts).await?;
-        
-        let matches = file_matches.into_iter()
-            .flat_map(|fm| fm.matches)
-            .collect();
-            
+        let matches = codem_core::grep::grep_codebase(&absolute_path, &pattern, opts).await?;
         Ok(matches)
     }
 }

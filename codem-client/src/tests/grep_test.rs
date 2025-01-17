@@ -12,7 +12,7 @@ async fn test_grep_file() {
     let client = create_test_client(dir.path(), None);
     let session_id = client.create_session("test").await.unwrap();
 
-    let matches = client.grep_file(
+    let file_matches = client.grep_file(
         &session_id,
         &file_path,
         "test",
@@ -20,7 +20,9 @@ async fn test_grep_file() {
         0
     ).await.unwrap();
 
-    assert_eq!(matches.len(), 2);
+    // Should get one GrepFileMatch with 2 matches in its matches vector
+    assert_eq!(file_matches.len(), 1);
+    assert_eq!(file_matches[0].matches.len(), 2);
 }
 
 #[tokio::test]
@@ -50,9 +52,11 @@ async fn test_grep_codebase() {
         0
     ).await.unwrap();
 
-    // We should find one match in each file
+    // Should get one GrepFileMatch for each file, each with one match
     assert_eq!(file1_matches.len(), 1);
-    assert_eq!(file2_matches.len(), 1);
+    assert_eq!(file1_matches[0].matches.len(), 1);
+    assert_eq!(file2_matches.len(), 1); 
+    assert_eq!(file2_matches[0].matches.len(), 1);
 }
 
 #[tokio::test]
@@ -72,5 +76,6 @@ async fn test_grep_empty_result() {
         0
     ).await.unwrap();
 
+    // Should get an empty vector of GrepFileMatch when no matches found
     assert_eq!(matches.len(), 0);
 }
