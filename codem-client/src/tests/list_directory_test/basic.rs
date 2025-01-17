@@ -1,4 +1,4 @@
-use std::fs;
+use std::{fs, path::Path};
 use tempfile::TempDir;
 use codem_core::types::ListOptions;
 use crate::tests::common::create_test_client;
@@ -21,7 +21,7 @@ async fn test_list_directory() {
     // List only the work directory
     let tree = client.list_directory(
         &session_id, 
-        &work_dir,
+        Some(Path::new("work")),
         ListOptions { 
             include_size: true,
             include_modified: true,

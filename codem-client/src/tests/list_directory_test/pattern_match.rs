@@ -17,7 +17,7 @@ async fn test_pattern_match() {
     let session_id = client.create_session("test").await.unwrap();
     let tree = client.list_directory(
         &session_id, 
-        test_dir.path(),
+        None,
         ListOptions {
             include_size: true,
             include_modified: true,
