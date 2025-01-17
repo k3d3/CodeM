@@ -15,7 +15,9 @@ async fn test_grep_file() {
     let matches = client.grep_file(
         &session_id,
         &file_path,
-        "test"
+        "test",
+        false,
+        0
     ).await.unwrap();
 
     assert_eq!(matches.len(), 2);
@@ -35,13 +37,17 @@ async fn test_grep_codebase() {
     let file1_matches = client.grep_file(
         &session_id,
         &file1_path,
-        "test\\d+"
+        "test\\d+",
+        false,
+        0
     ).await.unwrap();
 
     let file2_matches = client.grep_file(
         &session_id,
         &file2_path,
-        "test\\d+"
+        "test\\d+",
+        false,
+        0
     ).await.unwrap();
 
     // We should find one match in each file
@@ -61,7 +67,9 @@ async fn test_grep_empty_result() {
     let matches = client.grep_file(
         &session_id,
         &file_path,
-        "non-existent"
+        "non-existent",
+        false,
+        0
     ).await.unwrap();
 
     assert_eq!(matches.len(), 0);

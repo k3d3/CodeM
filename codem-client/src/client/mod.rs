@@ -27,6 +27,8 @@ impl Client {
         session_id: &str,
         path: impl AsRef<Path>,
         pattern: &str,
+        case_sensitive: bool,
+        context_lines: usize,
     ) -> Result<Vec<GrepMatch>, ClientError> {
         let path = path.as_ref();
         
@@ -43,7 +45,11 @@ impl Client {
             path: absolute_path.clone(),
         })?;
         
-        let opts = GrepOptions::default();
+        let opts = GrepOptions {
+            case_sensitive,
+            context_lines,
+            ..Default::default()
+        };
         let match_result = codem_core::grep::grep_file(&absolute_path, &pattern, &opts).await?;
 
         // Extract matches if they exist, otherwise return empty vec
@@ -56,7 +62,10 @@ impl Client {
         &self,
         session_id: &str,
         path: Option<&Path>,
+        file_pattern: Option<&str>,
         pattern: &str,
+        case_sensitive: bool,
+        context_lines: usize,
     ) -> Result<Vec<GrepMatch>, ClientError> {
         // Get session to access project
         let session = self.sessions.get_session(session_id).await?;
@@ -75,12 +84,18 @@ impl Client {
             path: absolute_path.clone(),
         })?;
         
-        let opts = GrepOptions::default();
-        let match_result = codem_core::grep::grep_file(&absolute_path, &pattern, &opts).await?;
-
-        // Extract matches if they exist, otherwise return empty vec
-        let matches = match_result.map(|m| m.matches).unwrap_or_default();
+        let opts = GrepOptions {
+            file_pattern: file_pattern.map(ToString::to_string),
+            case_sensitive,
+            context_lines
+        };
         
+        let file_matches = codem_core::grep::grep_codebase(&absolute_path, &pattern, opts).await?;
+        
+        let matches = file_matches.into_iter()
+            .flat_map(|fm| fm.matches)
+            .collect();
+            
         Ok(matches)
     }
 }

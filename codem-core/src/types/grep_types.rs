@@ -2,7 +2,6 @@ use std::path::PathBuf;
 
 #[derive(Debug, Clone, Default)]
 pub struct GrepOptions {
-    pub pattern: String,
     pub case_sensitive: bool,
     pub context_lines: usize,
     pub file_pattern: Option<String>,
