@@ -1,4 +1,4 @@
-use crate::MCP;
+use crate::server::Mcp;
 use codem_client::config::ClientConfig;
 use codem_client::Project;
 use std::fs;
@@ -27,5 +27,5 @@ fn test_new() {
         vec![]
     ).unwrap();
 
-    let _mcp = MCP::new(config);
+    let _mcp = Mcp::new(config);
 }

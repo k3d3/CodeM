@@ -6,6 +6,9 @@ mod error;
 mod server;
 mod tools;
 mod config;
+
+#[cfg(test)]
+mod tests;
 use config::TomlConfig;
 
 #[derive(Parser)]

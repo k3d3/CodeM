@@ -1,6 +1,8 @@
 use serde_json::json;
+use jsonrpc_stdio_server::jsonrpc_core::{Result, Value};
+use crate::server::Mcp;
 
-pub fn create_session_schema() -> serde_json::Value {
+pub fn create_session_schema() -> Value {
     json!({
         "type": "object",
         "properties": {
@@ -13,19 +15,16 @@ pub fn create_session_schema() -> serde_json::Value {
     })
 }
 
-pub fn read_file_schema() -> serde_json::Value {
-    json!({
-        "type": "object",
-        "properties": {
-            "session_id": {
-                "type": "string",
-                "description": "Session ID to use for reading"
-            },
-            "path": {
-                "type": "string",
-                "description": "Path to file (relative to project root)"
-            }
-        },
-        "required": ["session_id", "path"]
-    })
+pub async fn create_session(mcp: &Mcp, project: &str) -> Result<Value> {
+    mcp.client.create_session(project)
+        .await
+        .map(|session_id| json!({
+            "content": [{
+                "type": "text",
+                "text": json!({
+                    "session_id": session_id
+                }).to_string()
+            }]
+        }))
+        .map_err(|e| crate::error::McpError::Client(e).into())
 }
