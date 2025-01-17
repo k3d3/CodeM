@@ -1,4 +1,5 @@
 use crate::types::{TreeEntry, ListOptions, FileMetadata};
+use crate::fs_ops::is_in_git_dir;
 use super::stats::get_stats;
 use tokio::fs;
 use tokio::io;
@@ -13,6 +14,11 @@ pub async fn process_directory(
     options: &ListOptions,
     root: &mut TreeEntry,
 ) -> io::Result<()> {
+    // Skip .git directories
+    if is_in_git_dir(relative_path) {
+        return Ok(());
+    }
+
     if matches || options.recursive {
         let mut node = TreeEntry::default();
         node.entry.path = relative_path.to_path_buf();
@@ -25,7 +31,7 @@ pub async fn process_directory(
             }
         }
 
-            node.entry.entry_type = "DIR".to_string();
+        node.entry.entry_type = "DIR".to_string();
 
         if options.recursive {
             let subdir_entry = Box::pin(super::list::list_directory(base_path, entry_path, options)).await?;
@@ -61,12 +67,17 @@ pub async fn process_file(
     options: &ListOptions,
     root: &mut TreeEntry,
 ) -> io::Result<()> {
+    // Skip files in .git directories
+    if is_in_git_dir(relative_path) {
+        return Ok(());
+    }
+
     let mut node = TreeEntry::default();
     node.entry.path = relative_path.to_path_buf();
     node.entry.is_dir = false;
     node.entry.symlink = is_symlink;
 
-        node.entry.entry_type = "FILE".to_string();
+    node.entry.entry_type = "FILE".to_string();
 
     if options.include_size || options.include_modified || options.count_lines {
         if let Ok(stats) = get_stats(entry_path, options.count_lines).await {

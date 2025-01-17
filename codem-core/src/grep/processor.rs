@@ -4,8 +4,14 @@ use tokio::fs;
 use tokio::io;
 
 use crate::types::{GrepMatch, GrepFileMatch, GrepOptions};
+use crate::fs_ops::is_in_git_dir;
 
 pub async fn grep_file(path: impl AsRef<Path>, pattern: &Regex, options: &GrepOptions) -> io::Result<Option<GrepFileMatch>> {
+    // Skip files in .git directories
+    if is_in_git_dir(&path) {
+        return Ok(None);
+    }
+
     let content = fs::read_to_string(path.as_ref()).await?;
     let lines: Vec<&str> = content.lines().collect();
     let mut matches = Vec::new();
