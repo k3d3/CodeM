@@ -1,4 +1,4 @@
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use codem_core::command::run_command;
 use crate::error::ClientError;
 
@@ -10,15 +10,15 @@ impl crate::Client {
         cwd: Option<&Path>,
         timeout: Option<u64>
     ) -> Result<String, ClientError> {
-        if let Some(cwd) = cwd {
-            self.sessions.check_path(session_id, cwd)?;
-        }
+        let session = self.sessions.get_session(session_id).await?;
+        
+        // cwd is project base_path
+        let cwd = cwd.or(Some(session.project.base_path.as_path()));
 
-        // Create a PathBuf from the cwd Path for the duration of command execution
-        let cwd_buf = cwd.map(|p| p.to_path_buf());
+
         let output = run_command(
             command,
-            cwd_buf.as_ref().map(|p| p as &PathBuf),
+            cwd,
             timeout
         ).await?;
 
@@ -37,10 +37,20 @@ impl crate::Client {
 
     pub async fn run_test_command(
         &self,
-        _session_id: &str,
-        test_command: &str,
+        session_id: &str,
     ) -> Result<String, ClientError> {
-        let output = run_command(test_command, None, None).await?;
+        // Validate session exists and get project
+        let session = self.sessions.get_session(session_id).await?;
+
+        // Test command is in project config
+        let test_command = session.project.test_command
+            .as_ref()
+            .ok_or(ClientError::TestCommandNotConfigured)?;
+
+        // cwd is project base_path
+        let cwd = Some(session.project.base_path.as_path());
+
+        let output = run_command(test_command, cwd, None).await?;
 
         if output.exit_code != 0 {
             return Err(ClientError::TestCommandFailed { message: output.stderr });

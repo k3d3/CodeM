@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::Path;
 use std::process::{Command, Stdio};
 use std::time::Duration;
 use wait_timeout::ChildExt;
@@ -8,7 +8,7 @@ use crate::CommandError;
 
 pub async fn run_command(
     command: &str,
-    cwd: Option<&PathBuf>,
+    cwd: Option<&Path>,
     timeout_ms: Option<u64>,
 ) -> Result<CommandOutput, CommandError> {
     let mut cmd = Command::new("sh");

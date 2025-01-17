@@ -5,11 +5,8 @@ pub mod write;
 
 use crate::{error::ClientError, config::ClientConfig};
 use crate::session::manager::SessionManager;
-use crate::project::Project;
 use codem_core::types::{GrepMatch, GrepOptions};
-
 use std::path::Path;
-use std::sync::Arc;
 
 pub struct Client {
     pub(crate) sessions: SessionManager,
@@ -32,14 +29,28 @@ impl Client {
         path: impl AsRef<Path>,
         pattern: &str,
     ) -> Result<Vec<GrepMatch>, ClientError> {
-        self.sessions.check_path(session_id, path.as_ref())?;
+        let path = path.as_ref();
+        
+        // Get session to access project
+        let session = self.sessions.get_session(session_id).await?;
+        
+        // Resolve path relative to project base path
+        let absolute_path = session.project.base_path.join(path);
+        
+        // Validate the path
+        self.sessions.check_path(session_id, &absolute_path).await?;
+        
         let pattern = regex::Regex::new(pattern).map_err(|_| ClientError::InvalidPath {
-            path: path.as_ref().to_path_buf(),
+            path: absolute_path.clone(),
         })?;
         
         let opts = GrepOptions::default();
-        let result = codem_core::grep::grep_file(path.as_ref(), &pattern, &opts).await?;
-        Ok(result.map(|m| m.matches).unwrap_or_default())
+        let match_result = codem_core::grep::grep_file(&absolute_path, &pattern, &opts).await?;
+
+        // Extract matches if they exist, otherwise return empty vec
+        let matches = match_result.map(|m| m.matches).unwrap_or_default();
+        
+        Ok(matches)
     }
 
     pub async fn grep_codebase(
@@ -48,16 +59,27 @@ impl Client {
         path: impl AsRef<Path>,
         pattern: &str,
     ) -> Result<Vec<GrepMatch>, ClientError> {
-        self.sessions.check_path(session_id, path.as_ref())?;
-        let pattern = regex::Regex::new(pattern).map_err(|_| ClientError::InvalidPath {
-            path: path.as_ref().to_path_buf(),
-        })?;
-        let opts = GrepOptions::default();
-        let result = codem_core::grep::grep_file(path.as_ref(), &pattern, &opts).await?;
-        Ok(result.map(|m| m.matches).unwrap_or_default())
-    }
+        let path = path.as_ref();
+        
+        // Get session to access project
+        let session = self.sessions.get_session(session_id).await?;
+        
+        // Resolve path relative to project base path
+        let absolute_path = session.project.base_path.join(path);
+        
+        // Validate the path
+        self.sessions.check_path(session_id, &absolute_path).await?;
 
-    pub(crate) fn get_project(&self, name: &str) -> Result<Arc<Project>, ClientError> {
-        self.sessions.get_project(name)
+        let pattern = regex::Regex::new(pattern).map_err(|_| ClientError::InvalidPath {
+            path: absolute_path.clone(),
+        })?;
+        
+        let opts = GrepOptions::default();
+        let match_result = codem_core::grep::grep_file(&absolute_path, &pattern, &opts).await?;
+
+        // Extract matches if they exist, otherwise return empty vec
+        let matches = match_result.map(|m| m.matches).unwrap_or_default();
+        
+        Ok(matches)
     }
 }

@@ -3,7 +3,7 @@ pub mod config_error;
 pub use grep_error::GrepError;
 pub use config_error::ConfigError;
 
-use std::path::PathBuf;
+use std::{path::PathBuf, time::SystemTime};
 use error_set::error_set;
 use codem_core::error::{WriteError, CommandError};
 
@@ -20,11 +20,16 @@ error_set! {
         #[display("Command error: {0}")]
         CommandError(CommandError),
         #[display("Session not found: {id}")]
-        SessionNotFound { id: Box<str> },
+        SessionNotFound { id: String },
         #[display("Path not in project scope: {}", path.display())]
         PathOutOfScope { path: PathBuf },
         #[display("File timestamp mismatch for {}", path.display())]
-        TimestampMismatch { path: PathBuf },
+        TimestampMismatch { 
+            path: PathBuf,
+            current_timestamp: SystemTime,
+            expected_timestamp: SystemTime,
+            content: String,
+        },
         #[display("Project not found: {name}")]
         ProjectNotFound { name: String },
         #[display("Invalid session ID: {name}")]
@@ -48,6 +53,10 @@ error_set! {
         #[display("Test command not configured")]
         TestCommandNotConfigured,
         #[display("Test command failed: {message}")]
-        TestCommandFailed { message: String }
+        TestCommandFailed { message: String },
+        #[display("Toml deserialize error: {0}")]
+        TomlDeserializeError(toml::de::Error),
+        #[display("Toml serialize error: {0}")]
+        TomlSerializeError(toml::ser::Error),
     };
 }

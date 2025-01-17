@@ -1,6 +1,8 @@
 pub mod list;
 
 use std::path::Path;
+use codem_core::fs_ops::ReadOptions;
+
 use crate::{Client, error::ClientError}; 
 
 impl Client {
@@ -9,13 +11,22 @@ impl Client {
         session_id: &str,
         path: &Path,
     ) -> Result<String, ClientError> {
-        self.sessions.check_path(session_id, path)?;
-        let _ = self.sessions.get_timestamp(session_id, path).await?;
+        // Get session to access project
+        let session = self.sessions.get_session(session_id).await?;
+        
+        // Resolve path relative to project base path
+        let absolute_path = session.project.base_path.join(path);
+        
+        // Validate the path
+        self.sessions.check_path(session_id, &absolute_path).await?;
 
-        let content = tokio::fs::read_to_string(path).await?;
+        // Read the file using codem_core
+        let (content, metadata) = codem_core::fs_read::read_file(&absolute_path, ReadOptions { count_lines: true }).await?;
 
-        let metadata = path.metadata()?;
-        self.sessions.update_timestamp(session_id, path, metadata.modified()?).await?;
+        // Update timestamp after successful read
+        if let Some(modified) = metadata.modified {
+            self.sessions.update_timestamp(session_id, &absolute_path, modified).await?;
+        }
 
         Ok(content)
     }
