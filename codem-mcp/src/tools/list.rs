@@ -34,7 +34,7 @@ pub fn list_directory_schema() -> Value {
             },
             "file_pattern": {
                 "type": "string",
-                "description": "Optional regex to filter filenames",
+                "description": "Optional regex to filter filenames (note that this does not imply recursive; you still need to set recursive to true)",
                 "optional": true
             }
         },
