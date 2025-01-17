@@ -25,7 +25,6 @@ async fn test_list_directory() {
         ListOptions { 
             include_size: true,
             include_modified: true,
-            include_type: true,
             file_pattern: None,
             count_lines: true,
             recursive: false,

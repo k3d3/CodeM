@@ -38,13 +38,11 @@ pub fn verify_entry_types(entry: &TreeEntry, base_path: &Path) {
     let is_dir = metadata.is_dir();
     assert_eq!(entry.is_dir(), is_dir, "Type mismatch for {}", path.display());
     
-    if let Some(entry_type) = entry.entry_type() {
-        assert_eq!(
-            entry_type,
-            if is_dir { "directory" } else { "file" },
-            "Entry type mismatch for {}", path.display()
-        );
-    }
+    assert_eq!(
+        entry.entry_type(),
+        if is_dir { "DIR" } else { "FILE" },
+        "Entry type mismatch for {}", path.display()
+    );
 
     for child in &entry.children {
         verify_entry_types(child, base_path);

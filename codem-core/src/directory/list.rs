@@ -12,7 +12,7 @@ pub async fn list_directory(
     let mut root = TreeEntry::default();
     root.entry.path = path.strip_prefix(base_path).unwrap_or(path).to_path_buf();
     root.entry.is_dir = true;
-    root.entry.entry_type = Some("directory".to_string());
+    root.entry.entry_type = "DIR".to_string();
 
     let file_pattern_regex = options.file_pattern.as_ref().map(|pattern| {
         regex::Regex::new(pattern).unwrap()

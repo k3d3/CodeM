@@ -21,7 +21,6 @@ async fn test_pattern_match() {
         ListOptions {
             include_size: true,
             include_modified: true,
-            include_type: true,
             file_pattern: Some("\\.txt$".to_string()), // Use proper regex pattern
             count_lines: true,
             recursive: false,

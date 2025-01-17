@@ -36,7 +36,6 @@ proptest! {
                 recursive: true,
                 include_size: true,
                 include_modified: true,
-                include_type: true,
                 count_lines: true,
                 ..Default::default()
             };

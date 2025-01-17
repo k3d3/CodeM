@@ -44,7 +44,7 @@ impl TreeEntry {
         self.entry.stats.as_ref()
     }
 
-    pub fn entry_type(&self) -> Option<&String> {
+    pub fn entry_type(&self) -> &str {
         self.entry.entry_type.as_ref()
     }
 }
