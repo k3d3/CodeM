@@ -7,6 +7,7 @@ edition = "2021"
 anyhow = "1.0.95"
 clap = { version = "4.5.26", features = ["derive"] }
 codem-client = { version = "0.1.0", path = "../codem-client" }
+codem-core = { version = "0.1.0", path = "../codem-core" }
 error_set = "0.8.5"
 jsonrpc-stdio-server = "18.0.0"
 serde = { version = "1.0.217", features = ["derive"] }

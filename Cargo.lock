@@ -257,6 +257,7 @@ dependencies = [
  "anyhow",
  "clap",
  "codem-client",
+ "codem-core",
  "error_set",
  "jsonrpc-stdio-server",
  "serde",
