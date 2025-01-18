@@ -40,6 +40,39 @@ impl crate::Client {
         Ok(output.stdout)
     }
 
+    pub async fn run_command_risky(
+        &self,
+        session_id: &str,
+        command: &str,
+        cwd: Option<&Path>,
+        timeout: Option<u64>
+    ) -> Result<String, ClientError> {
+        let session = self.sessions.get_session(session_id).await?;
+        
+        // cwd is project base_path
+        let cwd = cwd.or(Some(session.project.base_path.as_path()));
+
+        // No safety checks - can run any command
+
+        let output = run_command(
+            command,
+            cwd,
+            timeout
+        ).await?;
+
+        if output.exit_code != 0 {
+            return Err(ClientError::CommandError(
+                codem_core::error::CommandError::CommandFailed { 
+                    stdout: output.stdout,
+                    stderr: output.stderr,
+                    exit_code: output.exit_code 
+                }
+            ));
+        }
+        
+        Ok(output.stdout)
+    }
+
     pub async fn run_test_command(
         &self,
         session_id: &str,

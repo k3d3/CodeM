@@ -44,7 +44,60 @@ pub fn list_tools() -> Value {
                 "name": "write_file_large",
                 "description": "Replace a large section of text between start and end markers",
                 "inputSchema": write::write_file_large_schema()
+            },
+            {
+                "name": "run_command",
+                "description": "Run a safe command in the project directory",
+                "inputSchema": command_schema()
+            },
+            {
+                "name": "run_command_risky",
+                "description": "Run a potentially unsafe command in the project directory",
+                "inputSchema": command_schema()
+            },
+            {
+                "name": "run_test_command",
+                "description": "Run the test command configured for the project",
+                "inputSchema": session_only_schema()
             }
         ]
+    })
+}
+
+fn command_schema() -> Value {
+    json!({
+        "type": "object",
+        "required": ["session_id", "command"],
+        "properties": {
+            "session_id": {
+                "type": "string",
+                "description": "Session ID for the project"
+            },
+            "command": {
+                "type": "string",
+                "description": "Command to execute"  
+            },
+            "cwd": {
+                "type": "string",
+                "description": "Working directory for command execution (optional)"
+            },
+            "timeout": {
+                "type": "integer",
+                "description": "Command timeout in seconds (optional)"
+            }
+        }
+    })
+}
+
+fn session_only_schema() -> Value {
+    json!({
+        "type": "object",
+        "required": ["session_id"],
+        "properties": {
+            "session_id": {
+                "type": "string",
+                "description": "Session ID for the project"
+            }
+        }
     })
 }

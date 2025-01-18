@@ -11,7 +11,7 @@ pub async fn run_command(
     cwd: Option<&Path>,
     timeout_ms: Option<u64>,
 ) -> Result<CommandOutput, CommandError> {
-    let mut cmd = Command::new("sh");
+    let mut cmd = Command::new("/bin/sh");
     cmd.args(["-c", command]);
 
 
@@ -22,6 +22,7 @@ pub async fn run_command(
     cmd.stdout(Stdio::piped());
     cmd.stderr(Stdio::piped());
 
+    println!("running command: {:?}", cmd);
     let mut child = cmd.spawn()?;
 
     let output = if let Some(timeout) = timeout_ms {

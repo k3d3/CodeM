@@ -6,6 +6,7 @@ use crate::tools::{
     handler_write,
     handler_grep,
     handler_write_small,
+    handler_command,
 };
 use crate::tools::types::ToolCall;
 
@@ -24,6 +25,9 @@ pub async fn handle_tool_call(mcp: &Mcp, call: ToolCall) -> Result<Value> {
         "write_file_full" => handler_write::handle_write_file_full(mcp, &call).await,
         "write_file_small" => handler_write_small::handle_write_file_small(mcp, &call).await,
         "write_file_large" => handler_write::handle_write_file_large(mcp, &call).await,
+        "run_command" => handler_command::handle_run_command(mcp, &call).await,
+        "run_command_risky" => handler_command::handle_run_command_risky(mcp, &call).await,
+        "run_test_command" => handler_command::handle_run_test_command(mcp, &call).await,
         _ => Ok(crate::error::format_error_response(format!("Unknown tool: {}", call.name)))
     }
 }

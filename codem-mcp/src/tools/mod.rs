@@ -10,6 +10,7 @@ pub mod handler_write;
 pub mod handler_grep;
 pub mod handler_read;
 pub mod handler_write_small;
+pub mod handler_command;
 
 pub use types::ToolCall;
 pub use tools_list::list_tools;
