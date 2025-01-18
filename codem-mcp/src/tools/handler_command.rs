@@ -102,13 +102,26 @@ pub async fn handle_run_test_command(mcp: &Mcp, call: &ToolCall) -> Result<Value
                 }
             ]
         })),
-        Err(err) => Ok(json!({
-            "content": [
-                {
-                    "type": "text",
-                    "text": format!("Test command failed: {}", err)
-                }
-            ]
-        }))
+        Err(err) => {
+            if matches!(err, codem_client::error::ClientError::TestCommandNotConfigured) {
+                Ok(json!({
+                    "content": [
+                        {
+                            "type": "text", 
+                            "text": "No test command configured for this project."
+                        }
+                    ]
+                }))
+            } else {
+                Ok(json!({
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": format!("Test command failed: {}", err)
+                        }
+                    ]
+                }))
+            }
+        }
     }
 }

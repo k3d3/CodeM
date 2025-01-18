@@ -37,7 +37,19 @@ impl crate::Client {
             ));
         }
         
-        Ok(output.stdout)
+        // Combine stdout and stderr
+        let mut combined = String::new();
+        if !output.stdout.is_empty() {
+            combined.push_str(&output.stdout);
+        }
+        if !output.stderr.is_empty() {
+            if !combined.is_empty() {
+                combined.push('\n');
+            }
+            combined.push_str(&output.stderr);
+        }
+
+        Ok(combined)
     }
 
     pub async fn run_command_risky(
@@ -70,7 +82,19 @@ impl crate::Client {
             ));
         }
         
-        Ok(output.stdout)
+        // Combine stdout and stderr
+        let mut combined = String::new();
+        if !output.stdout.is_empty() {
+            combined.push_str(&output.stdout);
+        }
+        if !output.stderr.is_empty() {
+            if !combined.is_empty() {
+                combined.push('\n');
+            }
+            combined.push_str(&output.stderr);
+        }
+
+        Ok(combined)
     }
 
     pub async fn run_test_command(
@@ -94,6 +118,18 @@ impl crate::Client {
             return Err(ClientError::TestCommandFailed { message: output.stderr });
         }
         
-        Ok(output.stdout)
+        // Combine stdout and stderr
+        let mut combined = String::new();
+        if !output.stdout.is_empty() {
+            combined.push_str(&output.stdout);
+        }
+        if !output.stderr.is_empty() {
+            if !combined.is_empty() {
+                combined.push('\n');
+            }
+            combined.push_str(&output.stderr);
+        }
+
+        Ok(combined)
     }
 }
