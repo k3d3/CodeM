@@ -1,0 +1,63 @@
+mod schemas;
+
+use serde_json::json;
+use jsonrpc_stdio_server::jsonrpc_core::{Result, Value}; 
+use std::path::PathBuf;
+use time::OffsetDateTime;
+use crate::server::Mcp;
+
+pub use schemas::*;
+
+pub async fn write_file_full(mcp: &Mcp, session_id: &str, path: &str, content: &str, run_test: bool) -> Result<Value> {
+    match mcp.client.write_file_full(session_id, &PathBuf::from(path), content, run_test).await {
+        Ok(result) => {
+            let modified = OffsetDateTime::from(result.modified);
+            Ok(json!({
+                "success": true,
+                "modified": modified.format(&time::format_description::well_known::Rfc3339).unwrap_or_default(),
+                "size": result.size,
+                "line_count": result.line_count
+            }))
+        },
+        Err(e) => Ok(json!({
+            "success": false,
+            "error": format!("{:?}", e)
+        }))
+    }
+}
+
+pub async fn write_file_small(mcp: &Mcp, session_id: &str, path: &str, changes: Vec<codem_core::types::Change>, run_test: bool) -> Result<Value> {
+    match mcp.client.write_file_partial(session_id, &PathBuf::from(path), changes, run_test).await {
+        Ok(result) => {
+            let modified = OffsetDateTime::from(result.modified);
+            Ok(json!({
+                "success": true,
+                "modified": modified.format(&time::format_description::well_known::Rfc3339).unwrap_or_default(),
+                "size": result.size,
+                "line_count": result.line_count
+            }))
+        },
+        Err(e) => Ok(json!({
+            "success": false,
+            "error": format!("{:?}", e)
+        }))
+    }
+}
+
+pub async fn write_file_large(mcp: &Mcp, session_id: &str, path: &str, start_str: &str, end_str: &str, new_str: &str, run_test: bool) -> Result<Value> {
+    match mcp.client.write_file_large(session_id, &PathBuf::from(path), start_str, end_str, new_str, run_test).await {
+        Ok(result) => {
+            let modified = OffsetDateTime::from(result.modified);
+            Ok(json!({
+                "success": true,
+                "modified": modified.format(&time::format_description::well_known::Rfc3339).unwrap_or_default(),
+                "size": result.size,
+                "line_count": result.line_count
+            }))
+        },
+        Err(e) => Ok(json!({
+            "success": false,
+            "error": format!("{:?}", e)
+        }))
+    }
+}
