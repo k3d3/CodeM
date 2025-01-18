@@ -37,7 +37,7 @@ pub async fn handle_write_file_small(mcp: &Mcp, call: &ToolCall) -> Result<Value
     let changes = changes?;
     let run_test = call.arguments.get("run_test")
         .and_then(|v| v.as_bool())
-        .unwrap_or(true);
+        .unwrap_or(false);
 
     write::write_file_small(mcp, session_id, path, changes, run_test).await
 }

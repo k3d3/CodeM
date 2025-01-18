@@ -20,7 +20,7 @@ pub fn schema() -> Value {
             "run_test": {
                 "type": "boolean",
                 "description": "Whether to run tests after write",
-                "default": true
+                "default": false
             }
         },
         "required": ["session_id", "path", "content"]
