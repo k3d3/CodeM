@@ -87,7 +87,7 @@ impl Client {
             context_lines
         };
         
-        let matches = codem_core::grep::grep_codebase(&absolute_path, &pattern, opts).await?;
+        let matches = codem_core::grep::grep_codebase(&absolute_path, &pattern, &opts).await?;
         Ok(matches)
     }
 }

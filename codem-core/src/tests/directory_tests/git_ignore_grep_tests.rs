@@ -2,7 +2,7 @@ use tempfile::TempDir;
 use std::fs;
 use tokio::io::AsyncWriteExt;
 
-use crate::grep::grep_file;
+use crate::grep::grep_codebase;
 use crate::types::GrepOptions;
 use regex::Regex;
 
@@ -30,15 +30,13 @@ async fn test_git_directory_ignored_in_grep() {
     let pattern = Regex::new("test content").unwrap();
     let options = GrepOptions {
         context_lines: 0,
-        case_sensitive: true,
         file_pattern: None,
+        case_sensitive: true,
     };
 
-    // Check git file
-    let git_result = grep_file(&git_file, &pattern, &options).await.unwrap();
-    assert!(git_result.is_none(), "Git file was not ignored in grep");
-
-    // Check normal file
-    let normal_result = grep_file(&normal_file, &pattern, &options).await.unwrap();
-    assert!(normal_result.is_some(), "Normal file was not found in grep");
+    let results = grep_codebase(temp.path(), &pattern, &options).await.unwrap();
+    
+    // Should find content only in normal files, not in .git
+    assert_eq!(results.len(), 1, "Should only find content in non-git files");
+    assert_eq!(results[0].path, normal_file, "Match should be in the normal file");
 }

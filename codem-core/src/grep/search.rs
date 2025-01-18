@@ -1,95 +1,107 @@
 use std::path::Path;
 use futures::stream::{FuturesUnordered, StreamExt};
-use regex::Regex;
-use tokio::fs;
+use ignore::WalkBuilder;
 use tokio::io;
+use regex::Regex;
+use regex::RegexBuilder;
+use std::sync::Arc;
 
 use crate::types::{GrepFileMatch, GrepOptions};
 use super::processor::grep_file;
 
-fn matches_file_pattern(path: &Path, options: &GrepOptions) -> bool {
-    if let Some(file_pattern) = &options.file_pattern {
-        let file_name = path.file_name()
-            .map(|f| f.to_string_lossy())
-            .unwrap_or_default();
-        
-        glob::Pattern::new(file_pattern)
-            .map(|p| p.matches(&file_name))
-            .unwrap_or(false)
-    } else {
-        true
-    }
+struct SearchContext {
+    options: GrepOptions,
+    pattern: Regex,
 }
 
 pub async fn grep_codebase(
-    root: impl AsRef<Path>,
+    root: impl AsRef<Path>, 
     pattern: &Regex,
-    options: GrepOptions,
+    options: &GrepOptions,
 ) -> io::Result<Vec<GrepFileMatch>> {
-    let mut files = Vec::new();
-    let mut dirs = Vec::new();
-    
-    // Skip directories containing ".git" in root path
-
-    if !root.as_ref().display().to_string().contains(".git") {
-        println!("Searching in: {:?}", root.as_ref());
-    }
-    let mut read_dir = fs::read_dir(&root).await?;
-    while let Some(entry) = read_dir.next_entry().await? {
-        if entry.file_type().await?.is_file() {
-            files.push(entry.path());
-        } else if entry.file_type().await?.is_dir() {
-            dirs.push(entry.path());
-        }
-    }
-    
-    files.sort();
-    dirs.sort();
-
-    if !root.as_ref().display().to_string().contains(".git") {
-        println!("Files: {:?}", files);
-        println!("Dirs: {:?}", dirs);
-    }
-    
-    let filtered_files: Vec<_> = files.into_iter()
-        .filter(|path| {
-            let matches = matches_file_pattern(path, &options);
-            if !matches {
-                println!("Skipping file: {:?}", path);
-            }
-            matches
-})
-        .collect();
-
     let mut matches = Vec::new();
     let max_concurrent = num_cpus::get();
+    
+    let mut walker_builder = WalkBuilder::new(root.as_ref());
+    walker_builder
+        .ignore(true)  // Use ignore patterns from .gitignore
+        .git_global(true) // Use global gitignore
+        .git_ignore(true) // Use .gitignore files
+        .follow_links(false) // Never follow symlinks for safety
+        .require_git(false); // Don't require being in a git repo
+        
+    #[cfg(test)]
+    {
+        eprintln!("Walking directory: {:?}", root.as_ref());
+    }
+    
+    let walker = walker_builder.build();
+    
+    // Build pattern with proper case sensitivity - case insensitive by default
+    let context_pattern = RegexBuilder::new(pattern.as_str())
+        .case_insensitive(!options.case_sensitive)
+        .build()
+        .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
+    
+    let context = Arc::new(SearchContext {
+        options: options.clone(),
+        pattern: context_pattern,
+    });
+    
+    let mut futures = FuturesUnordered::new();
 
-    let mut file_futures = FuturesUnordered::new();
-    for path in filtered_files {
-        if file_futures.len() >= max_concurrent {
-            if let Some(Ok(Some(result))) = file_futures.next().await {
-                matches.push(result);
+    // Process all the filesystem entries 
+    for result in walker {
+        match result {
+            Ok(entry) => {
+                #[cfg(test)]
+                {
+                    eprintln!("Entry path: {:?}", entry.path());
+                    if entry.file_type().map_or(false, |ft| ft.is_file()) {
+                        if let Ok(content) = std::fs::read_to_string(entry.path()) {
+                            eprintln!("Content: {}", content);
+                        }
+                    }
+                }
+                
+                // Skip directories
+                if !entry.file_type().map_or(false, |ft| ft.is_file()) {
+                    continue;
+                }
+
+                // We own the path
+                let path = entry.into_path();
+
+                // Apply file pattern filter if specified
+                if let Some(pat) = &context.options.file_pattern {
+                    let file_name = path.file_name().map(|s| s.to_string_lossy()).unwrap_or_default();
+                    if !glob::Pattern::new(pat).map_or(false, |p| p.matches(&file_name)) {
+                        continue;
+                    }
+                }
+
+                if futures.len() >= max_concurrent {
+                    if let Some(Ok(Some(result))) = futures.next().await {
+                        matches.push(result);
+                    }
+                }
+
+                let context = Arc::clone(&context);
+                futures.push(async move {
+                    grep_file(path, &context.pattern, &context.options).await
+                });
+            }
+            Err(err) => {
+                eprintln!("Error walking directory: {}", err);
             }
         }
-        file_futures.push(grep_file(path, pattern, &options));
     }
 
-    while let Some(Ok(Some(result))) = file_futures.next().await {
-        matches.push(result);
-    }
-
-    let mut dir_futures = FuturesUnordered::new();
-    for path in dirs {
-        if dir_futures.len() >= max_concurrent {
-            if let Some(Ok(dir_matches)) = dir_futures.next().await {
-                matches.extend(dir_matches);
-            }
+    // Drain remaining futures
+    while let Some(result) = futures.next().await {
+        if let Ok(Some(file_match)) = result {
+            matches.push(file_match);
         }
-        dir_futures.push(grep_codebase(path, pattern, options.clone()));
-    }
-
-    while let Some(Ok(dir_matches)) = dir_futures.next().await {
-        matches.extend(dir_matches);
     }
 
     Ok(matches)
