@@ -41,7 +41,7 @@ pub fn read_multiple_files_schema() -> Value {
     })
 }
 
-pub async fn read_multiple_files(mcp: &Mcp, session_id: &str, paths: Vec<String>) -> Result<Value> {
+pub async fn read_files(mcp: &Mcp, session_id: &str, paths: Vec<String>) -> Result<Value> {
     let mut files_text = String::new();
     let mut successful_reads = 0;
     let mut failed_reads = 0;
@@ -88,27 +88,4 @@ pub async fn read_multiple_files(mcp: &Mcp, session_id: &str, paths: Vec<String>
             }
         ]
     }))
-}
-
-pub async fn read_file(mcp: &Mcp, session_id: &str, path: &str) -> Result<Value> {
-    match mcp.client.read_file(session_id, &PathBuf::from(path)).await {
-        Ok((content, metadata)) => Ok(json!({
-            "content": [
-                {
-                    "type": "text",
-                    "text": content
-                },
-                {
-                    "type": "text",
-                    "text": format!(
-                        "[METADATA]\nFILE_PATH={}\nSIZE_BYTES={}\nLINE_COUNT={}\n[/METADATA]",
-                        path,
-                        metadata.size.unwrap_or(0),
-                        metadata.line_count.unwrap_or(0)
-                    )
-                }
-            ]
-        })),
-        Err(e) => Ok(format_error_response(e.to_string()))
-    }
 }

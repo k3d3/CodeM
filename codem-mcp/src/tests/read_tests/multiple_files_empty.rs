@@ -9,7 +9,7 @@ async fn test_read_multiple_files_no_paths() {
     let session_id = mcp.client.create_session("test_project").await.unwrap();
     let paths: Vec<String> = vec![];
 
-    let result = read::read_multiple_files(&mcp, &session_id, paths).await.unwrap();
+    let result = read::read_files(&mcp, &session_id, paths).await.unwrap();
 
     if let Value::Object(map) = result {
         let content = map.get("content").unwrap().as_array().unwrap();

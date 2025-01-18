@@ -60,18 +60,7 @@ pub async fn handle_tool_call(mcp: &Mcp, call: ToolCall) -> Result<Value> {
                 .ok_or_else(|| jsonrpc_stdio_server::jsonrpc_core::Error::invalid_params("missing project parameter"))?;
             session::create_session(mcp, project).await
         },
-        "read_file" => {
-            let session_id = call.arguments.get("session_id")
-                .and_then(|v| v.as_str())
-                .ok_or_else(|| jsonrpc_stdio_server::jsonrpc_core::Error::invalid_params("missing session_id parameter"))?;
-                
-            let path = call.arguments.get("path")
-                .and_then(|v| v.as_str())
-                .ok_or_else(|| jsonrpc_stdio_server::jsonrpc_core::Error::invalid_params("missing path parameter"))?;
-                
-            read::read_file(mcp, session_id, path).await
-        },
-        "read_multiple_files" => {
+        "read_files" => {
             let session_id = call.arguments.get("session_id")
                 .and_then(|v| v.as_str())
                 .ok_or_else(|| jsonrpc_stdio_server::jsonrpc_core::Error::invalid_params("missing session_id parameter"))?;
@@ -85,7 +74,7 @@ pub async fn handle_tool_call(mcp: &Mcp, call: ToolCall) -> Result<Value> {
                 .map(String::from)
                 .collect();
                 
-            read::read_multiple_files(mcp, session_id, paths).await
+            read::read_files(mcp, session_id, paths).await
         },
         "list_directory" => {
             let session_id = call.arguments.get("session_id")
