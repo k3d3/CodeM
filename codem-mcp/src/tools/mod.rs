@@ -24,14 +24,9 @@ pub fn list_tools() -> Value {
                 "inputSchema": session::create_session_schema()
             },
             {
-                "name": "read_file",
-                "description": "Read a file's contents", 
-                "inputSchema": read::read_file_schema()
-            },
-            {
-                "name": "read_multiple_files",
-                "description": "Read multiple files' contents simultaneously",
-                "inputSchema": read::read_multiple_files_schema()
+                "name": "read_files",
+                "description": "Read the contents of one or more files",
+                "inputSchema": read::read_files_schema()
             },
             {
                 "name": "list_directory",

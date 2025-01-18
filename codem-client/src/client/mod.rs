@@ -52,7 +52,14 @@ impl Client {
         };
 
         let result = codem_core::grep::grep_file(&absolute_path, &pattern, &opts).await?;
-        Ok(result.into_iter().collect())
+        
+        // Convert relative paths and wrap in Vec
+        Ok(result.map(|mut match_result| {
+            match_result.path = match_result.path.strip_prefix(&session.project.base_path)
+                .unwrap_or(&match_result.path)
+                .to_path_buf();
+            match_result
+        }).into_iter().collect())
     }
 
     pub async fn grep_codebase(
@@ -88,6 +95,15 @@ impl Client {
         };
         
         let matches = codem_core::grep::grep_codebase(&absolute_path, &pattern, &opts).await?;
-        Ok(matches)
+        
+        // Convert absolute paths to relative paths
+        let relative_matches = matches.into_iter().map(|mut match_result| {
+            match_result.path = match_result.path.strip_prefix(&session.project.base_path)
+                .unwrap_or(&match_result.path)
+                .to_path_buf();
+            match_result
+        }).collect();
+        
+        Ok(relative_matches)
     }
 }

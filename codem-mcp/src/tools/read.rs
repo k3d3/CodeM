@@ -1,26 +1,9 @@
 use serde_json::json;
 use jsonrpc_stdio_server::jsonrpc_core::{Result, Value};
 use std::path::PathBuf;
-use crate::{error::format_error_response, server::Mcp};
+use crate::server::Mcp;
 
-pub fn read_file_schema() -> Value {
-    json!({
-        "type": "object",
-        "properties": {
-            "session_id": {
-                "type": "string",
-                "description": "Session ID to use for reading"
-            },
-            "path": {
-                "type": "string",
-                "description": "Path to file (relative to project root)"
-            }
-        },
-        "required": ["session_id", "path"]
-    })
-}
-
-pub fn read_multiple_files_schema() -> Value {
+pub fn read_files_schema() -> Value {
     json!({
         "type": "object",
         "properties": {
