@@ -29,6 +29,11 @@ pub fn list_tools() -> Value {
                 "inputSchema": read::read_file_schema()
             },
             {
+                "name": "read_multiple_files",
+                "description": "Read multiple files' contents simultaneously",
+                "inputSchema": read::read_multiple_files_schema()
+            },
+            {
                 "name": "list_directory",
                 "description": "List contents of a directory with optional regex filtering",
                 "inputSchema": list::list_directory_schema()
@@ -65,6 +70,22 @@ pub async fn handle_tool_call(mcp: &Mcp, call: ToolCall) -> Result<Value> {
                 .ok_or_else(|| jsonrpc_stdio_server::jsonrpc_core::Error::invalid_params("missing path parameter"))?;
                 
             read::read_file(mcp, session_id, path).await
+        },
+        "read_multiple_files" => {
+            let session_id = call.arguments.get("session_id")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| jsonrpc_stdio_server::jsonrpc_core::Error::invalid_params("missing session_id parameter"))?;
+                
+            let paths = call.arguments.get("paths")
+                .and_then(|v| v.as_array())
+                .ok_or_else(|| jsonrpc_stdio_server::jsonrpc_core::Error::invalid_params("missing paths parameter"))?;
+
+            let paths: Vec<String> = paths.iter()
+                .filter_map(|v| v.as_str())
+                .map(String::from)
+                .collect();
+                
+            read::read_multiple_files(mcp, session_id, paths).await
         },
         "list_directory" => {
             let session_id = call.arguments.get("session_id")

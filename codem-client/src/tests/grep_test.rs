@@ -60,6 +60,35 @@ async fn test_grep_codebase() {
 }
 
 #[tokio::test]
+async fn temp_test_grep_codebase() {
+    let mut found_file = false;
+
+    let client = create_test_client("/home/main/src/claude/codem", None);
+
+    let session_id = client.create_session("test").await.unwrap();
+
+    let matches = client.grep_codebase(
+        &session_id,
+        None,
+        None,
+        "write_file_partial",
+        false,
+        0
+    ).await.unwrap();
+
+    for m in &matches {
+        // check if src/client/write/mod.rs is in the matches
+        if m.path.ends_with("src/client/write/mod.rs") {
+            found_file = true;
+        }
+    }
+
+    println!("{:#?}", matches);
+
+    assert_eq!(found_file, true);
+}
+
+#[tokio::test]
 async fn test_grep_empty_result() {
     let dir = TempDir::new().unwrap();
     let file_path = dir.path().join("file1.txt");

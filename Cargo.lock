@@ -260,6 +260,7 @@ dependencies = [
  "codem-core",
  "error_set",
  "jsonrpc-stdio-server",
+ "rstest",
  "serde",
  "serde_json",
  "tempfile",

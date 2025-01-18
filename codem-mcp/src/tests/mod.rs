@@ -4,6 +4,8 @@ use codem_client::Project;
 use std::fs;
 use tempfile::TempDir;
 
+mod read_tests;
+
 #[test]
 fn test_new() {
     let temp_dir = TempDir::new().unwrap();

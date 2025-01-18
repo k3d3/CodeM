@@ -29,7 +29,12 @@ pub async fn grep_codebase(
     let mut files = Vec::new();
     let mut dirs = Vec::new();
     
-    let mut read_dir = fs::read_dir(root).await?;
+    // Skip directories containing ".git" in root path
+
+    if !root.as_ref().display().to_string().contains(".git") {
+        println!("Searching in: {:?}", root.as_ref());
+    }
+    let mut read_dir = fs::read_dir(&root).await?;
     while let Some(entry) = read_dir.next_entry().await? {
         if entry.file_type().await?.is_file() {
             files.push(entry.path());
@@ -40,9 +45,20 @@ pub async fn grep_codebase(
     
     files.sort();
     dirs.sort();
+
+    if !root.as_ref().display().to_string().contains(".git") {
+        println!("Files: {:?}", files);
+        println!("Dirs: {:?}", dirs);
+    }
     
     let filtered_files: Vec<_> = files.into_iter()
-        .filter(|path| matches_file_pattern(path, &options))
+        .filter(|path| {
+            let matches = matches_file_pattern(path, &options);
+            if !matches {
+                println!("Skipping file: {:?}", path);
+            }
+            matches
+})
         .collect();
 
     let mut matches = Vec::new();
