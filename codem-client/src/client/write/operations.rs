@@ -75,7 +75,7 @@ pub(crate) async fn handle_new_file(
 async fn run_test_command(session: &crate::session::manager::session::Session) -> Result<(), ClientError> {
     let test_cmd = session.project.test_command.as_ref().ok_or(ClientError::TestCommandNotConfigured)?;
 
-    let output = run_command(test_cmd, None, None).await
+    let output = run_command(test_cmd, Some(&session.project.base_path), None).await
         .map_err(ClientError::CommandError)?;
 
     if output.exit_code != 0 {
