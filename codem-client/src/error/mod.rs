@@ -10,7 +10,9 @@ use codem_core::error::{WriteError, CommandError};
 error_set! {
     ClientError = {
         #[display("File not found: {}", path.display())]
-        FileNotFound { path: PathBuf }, // path should be relative to project base
+        FileNotFound { 
+            path: PathBuf,
+        },
         #[display("IO error: {0}")]
         IoError(std::io::Error),
         #[display("Could not create directory {}", path.display())]
@@ -22,9 +24,13 @@ error_set! {
         #[display("Session not found: {id}")]
         SessionNotFound { id: String },
         #[display("Attempted to write to a file was not previously read")]
-        FileNotSynced,
+        FileNotSynced {
+            content: Option<String>,
+        },
         #[display("Path not in project scope: {}", path.display())]
-        PathOutOfScope { path: PathBuf },
+        PathOutOfScope { 
+            path: PathBuf,
+        },
         #[display("File timestamp mismatch for {}", path.display())]
         TimestampMismatch { 
             path: PathBuf,
@@ -36,18 +42,34 @@ error_set! {
         ProjectNotFound { name: String },
         #[display("Invalid session ID: {name}")]
         InvalidSessionId { name: String },
-        #[display("File not found: {}", path.display())]
-        FileNotReadable { path: PathBuf },
+        #[display("File not readable: {}", path.display())]
+        FileNotReadable { 
+            path: PathBuf,
+            content: Option<String>,
+        },
         #[display("File not read: {}", path.display())] 
-        FileNotRead { path: PathBuf },
+        FileNotRead { 
+            path: PathBuf,
+            content: Option<String>,
+        },
         #[display("Path not allowed: {}", path.display())]
-        PathNotAllowed { path: PathBuf },
+        PathNotAllowed { 
+            path: PathBuf,
+        },
         #[display("Invalid path: {}", path.display())]
-        InvalidPath { path: PathBuf },
+        InvalidPath { 
+            path: PathBuf,
+        },
         #[display("Path exists: {}", path.display())]
-        PathExists { path: PathBuf },
+        PathExists { 
+            path: PathBuf,
+            content: Option<String>,
+        },
         #[display("Permission denied: {}", path.display())]
-        PermissionDenied { path: PathBuf },
+        PermissionDenied { 
+            path: PathBuf,
+            content: Option<String>,
+        },
         #[display("Config error: {0}")]
         ConfigError(ConfigError),
         #[display("Grep error: {0}")]

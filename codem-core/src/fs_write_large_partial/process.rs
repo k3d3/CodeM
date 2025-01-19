@@ -17,7 +17,7 @@ pub async fn process_large_partial_write(
     let start_matches: Vec<_> = contents.match_indices(&partial_write.start_str).collect();
     let end_matches: Vec<_> = contents.match_indices(&partial_write.end_str).collect();
 
-    validate_matches(&start_matches, &end_matches)?;
+    validate_matches(&start_matches, &end_matches, &contents)?;
 
     let (start_pos, _) = start_matches[0];
     let (end_pos, _) = end_matches[0];

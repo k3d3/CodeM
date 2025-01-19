@@ -3,7 +3,7 @@ mod schemas;
 use serde_json::json;
 use jsonrpc_stdio_server::jsonrpc_core::{Result, Value}; 
 use std::path::PathBuf;
-use crate::server::Mcp;
+use crate::{server::Mcp, error::{error_response_with_content, get_error_content}};
 
 pub use schemas::*;
 
@@ -22,12 +22,7 @@ pub async fn write_file_full(mcp: &Mcp, session_id: &str, path: &str, content: &
                 }]
             }))
         },
-        Err(e) => Ok(json!({
-            "content": [{
-                "type": "text",
-                "text": format!("Error writing file: {:?}", e)
-            }]
-        }))
+        Err(e) => Ok(error_response_with_content(&e, get_error_content(&e)))
     }
 }
 
@@ -46,12 +41,7 @@ pub async fn write_file_small(mcp: &Mcp, session_id: &str, path: &str, changes: 
                 }]
             }))
         },
-        Err(e) => Ok(json!({
-            "content": [{
-                "type": "text",
-                "text": format!("Error updating file: {:?}", e)
-            }]
-        }))
+        Err(e) => Ok(error_response_with_content(&e, get_error_content(&e)))
     }
 }
 
@@ -70,11 +60,6 @@ pub async fn write_file_large(mcp: &Mcp, session_id: &str, path: &str, start_str
                 }]
             }))
         },
-        Err(e) => Ok(json!({
-            "content": [{
-                "type": "text",
-                "text": format!("Error replacing file section: {:?}", e)
-            }]
-        }))
+        Err(e) => Ok(error_response_with_content(&e, get_error_content(&e)))
     }
 }

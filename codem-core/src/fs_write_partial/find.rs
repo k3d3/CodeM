@@ -30,7 +30,9 @@ pub fn find_matches(
     // Check if any required pattern wasn't found
     for i in 0..partial_writes.changes.len() {
         if !matched_patterns.contains(&i) {
-            return Err(WriteError::StartPatternNotFound);
+            return Err(WriteError::StartPatternNotFound {
+                content: contents.to_string()
+            });
         }
     }
 
@@ -43,7 +45,15 @@ pub fn find_matches(
     // Check for multiple matches that aren't allowed
     for (i, count) in match_counts.iter().enumerate() {
         if *count > 1 && !partial_writes.changes[i].allow_multiple_matches {
-            return Err(WriteError::MultiplePatternMatches { index: i });
+            return Err(WriteError::MultiplePatternMatches { 
+                index: i,
+                content: contents.to_string(),
+                matches: all_matches
+                    .iter()
+                    .filter(|m| m.pattern_index == i)
+                    .map(|m| (m.relative_match_start, partial_writes.changes[i].old_str.clone()))
+                    .collect()
+            });
         }
     }
 

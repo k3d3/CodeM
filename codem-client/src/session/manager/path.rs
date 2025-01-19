@@ -36,6 +36,8 @@ impl PathValidator {
             }
         }
 
-        Err(ClientError::PathOutOfScope { path })
+        Err(ClientError::PathOutOfScope { 
+            path,
+        })
     }
 }

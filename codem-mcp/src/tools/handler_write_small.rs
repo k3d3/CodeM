@@ -29,7 +29,7 @@ pub async fn handle_write_file_small(mcp: &Mcp, call: &ToolCall) -> Result<Value
             Ok(Change {
                 old_str: old_str.to_string(),
                 new_str: new_str.to_string(),
-                allow_multiple_matches: false,
+                allow_multiple_matches: v.get("allow_multiple_matches").and_then(|v| v.as_bool()).unwrap_or(false),
             })
         })
         .collect();

@@ -21,7 +21,7 @@ async fn test_duplicate_patterns() {
     });
 
     let result = write_file(&file_path, operation, None).await;
-    assert!(matches!(result, Err(WriteError::MultipleStartPatternsFound)));
+    assert!(matches!(result, Err(WriteError::MultipleStartPatternsFound { content: _ })));
 
     // Test multiple end patterns
     let content = "START\nEND\nMIDDLE\nEND\n";
@@ -35,5 +35,5 @@ async fn test_duplicate_patterns() {
     });
 
     let result = write_file(&file_path, operation, None).await;
-    assert!(matches!(result, Err(WriteError::MultipleEndPatternsFound)));
+    assert!(matches!(result, Err(WriteError::MultipleEndPatternsFound { content: _ })));
 }

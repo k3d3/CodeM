@@ -17,8 +17,11 @@ pub async fn write_file(
 
     if let Some(timestamp) = match_timestamp {
         let metadata = path.metadata()?;
+        let contents = fs::read_to_string(path).await?;
         if metadata.modified()? != timestamp {
-            return Err(WriteError::TimestampMismatch);
+            return Err(WriteError::TimestampMismatch { 
+                content: contents 
+            });
         }
     }
 

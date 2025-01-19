@@ -26,7 +26,7 @@ async fn test_simple_pattern_order(#[case] start: &str, #[case] end: &str) {
     });
 
     let result = write_file(&file_path, operation, None).await;
-    assert!(matches!(result, Err(WriteError::EndPatternBeforeStart)));
+    assert!(matches!(result, Err(WriteError::EndPatternBeforeStart { content: _ })));
 
     let final_content = fs::read_to_string(&file_path).await.unwrap();
     assert_eq!(file_content, final_content);
@@ -51,5 +51,5 @@ async fn test_duplicate_patterns(#[case] pattern: &str) {
     });
 
     let result = write_file(&file_path, operation, None).await;
-    assert!(matches!(result, Err(WriteError::MultipleStartPatternsFound)));
+    assert!(matches!(result, Err(WriteError::MultipleStartPatternsFound { content: _ })));
 }

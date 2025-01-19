@@ -9,23 +9,39 @@ error_set! {
         #[display("Aho-Corasick error")]
         AhoCorasickError(aho_corasick::BuildError),
         #[display("File has been modified externally")]
-        TimestampMismatch,
+        TimestampMismatch {
+            content: String,
+        },
         #[display("Multiple pattern matches found when allow_multiple_matches is false")]
         MultiplePatternMatches {
             index: usize,
+            content: String,
+            matches: Vec<(usize, String)>, // (line number, matched text)
         },
         #[display("Start pattern not found")]
-        StartPatternNotFound,
+        StartPatternNotFound {
+            content: String,
+        },
         #[display("End pattern not found")]
-        EndPatternNotFound,
+        EndPatternNotFound {
+            content: String,
+        },
         #[display("Multiple start patterns found")]
-        MultipleStartPatternsFound,
+        MultipleStartPatternsFound {
+            content: String,
+        },
         #[display("Multiple end patterns found")]
-        MultipleEndPatternsFound,
+        MultipleEndPatternsFound {
+            content: String,
+        },
         #[display("End pattern appears before start pattern")]
-        EndPatternBeforeStart,
+        EndPatternBeforeStart {
+            content: String,
+        },
         #[display("Patterns overlap or are nested")]
-        InvalidPatternPair,
+        InvalidPatternPair {
+            content: String,
+        },
     };
 
     CommandError = {

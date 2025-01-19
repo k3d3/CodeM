@@ -24,7 +24,7 @@ async fn test_invalid_order(#[case] first: &str, #[case] second: &str) {
     });
 
     let result = write_file(&file_path, operation, None).await;
-    assert!(matches!(result, Err(WriteError::EndPatternBeforeStart)));
+    assert!(matches!(result, Err(WriteError::EndPatternBeforeStart { content: _ })));
 }
 
 #[rstest]
@@ -48,5 +48,5 @@ async fn test_overlapping_patterns(#[case] start: &str, #[case] end: &str) {
     });
 
     let result = write_file(&file_path, operation, None).await;
-    assert!(matches!(result, Err(WriteError::InvalidPatternPair)));
+    assert!(matches!(result, Err(WriteError::InvalidPatternPair { content: _ })));
 }

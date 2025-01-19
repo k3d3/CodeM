@@ -46,7 +46,7 @@ async fn test_invalid_order(#[case] start: &str, #[case] end: &str, #[case] cont
 
     // Should return an error
     let result = write_file(&file_path, operation, None).await;
-    assert!(matches!(result, Err(WriteError::EndPatternBeforeStart)));
+    assert!(matches!(result, Err(WriteError::EndPatternBeforeStart { content: _ })));
 }
 
 #[rstest]
@@ -70,7 +70,14 @@ async fn test_invalid_pattern_pairs(#[case] start: &str, #[case] end: &str) {
 
     // Should error due to invalid pattern pairs
     let result = write_file(&file_path, operation, None).await;
-    assert!(result.is_err());
+    if let Err(e) = result {
+        match e {
+            WriteError::InvalidPatternPair { content: _ } => (), // Expected
+            _ => panic!("Unexpected error type: {:?}", e)
+        }
+    } else {
+        panic!("Expected error, got success");
+    }
 }
 
 #[tokio::test]

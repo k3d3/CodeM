@@ -18,8 +18,19 @@ pub fn schema() -> Value {
                 "items": {
                     "type": "object",
                     "properties": {
-                        "old_str": {"type": "string"},
-                        "new_str": {"type": "string"}
+                        "old_str": {
+                            "type": "string",
+                            "description": "Text to find and replace"
+                        },
+                        "new_str": {
+                            "type": "string",
+                            "description": "Text to replace it with"
+                        },
+                        "allow_multiple_matches": {
+                            "type": "boolean",
+                            "description": "Whether to allow replacing multiple matches of old_str. By default this is false to prevent unintended changes.",
+                            "default": false
+                        }
                     },
                     "required": ["old_str", "new_str"]
                 },

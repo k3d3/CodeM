@@ -88,11 +88,13 @@ impl Metadata {
     pub fn get_timestamp(&self, session_id: &str, path: &Path) -> Result<SystemTime, ClientError> {
         let path = path.to_path_buf();
         let session_stamps = self.timestamps.get(session_id)
-            .ok_or_else(|| ClientError::FileNotSynced)?;
+            .ok_or_else(|| ClientError::FileNotSynced { content: None })?;
 
         session_stamps.get(&path)
             .cloned()
-            .ok_or(ClientError::InvalidPath { path })
+            .ok_or(ClientError::InvalidPath { 
+                path,
+            })
     }
 
     pub async fn update_timestamp(&mut self, session_id: &str, path: &Path, timestamp: SystemTime) -> Result<(), ClientError> {

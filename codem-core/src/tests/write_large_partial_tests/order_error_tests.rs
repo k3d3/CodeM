@@ -26,7 +26,7 @@ async fn test_pattern_wrong_order(#[case] start: &str, #[case] end: &str) {
     });
 
     let result = write_file(&file_path, operation, None).await;
-    assert!(matches!(result, Err(WriteError::EndPatternBeforeStart)));
+    assert!(matches!(result, Err(WriteError::EndPatternBeforeStart { content: _ })));
 
     let final_content = fs::read_to_string(&file_path).await.unwrap();
     assert_eq!(file_content, final_content);

@@ -34,7 +34,9 @@ impl Client {
         let (current_content, metadata) = match read_result {
             Ok(result) => result,
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
-                return Err(ClientError::FileNotFound { path: absolute_path });
+                return Err(ClientError::FileNotFound { 
+                    path: absolute_path
+                });
             }
             Err(e) => return Err(ClientError::IoError(e))
         };
@@ -89,7 +91,9 @@ impl Client {
 
         // First check if the file exists
         if !absolute_path.exists() {
-            return Err(ClientError::FileNotFound { path: absolute_path });
+            return Err(ClientError::FileNotFound {
+                path: absolute_path
+            });
         }
         
         // Get stored timestamp
@@ -102,7 +106,9 @@ impl Client {
         let (current_content, metadata) = match read_result {
             Ok(result) => result,
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
-                return Err(ClientError::FileNotFound { path: absolute_path });
+                return Err(ClientError::FileNotFound {
+                    path: absolute_path
+                });
             }
             Err(e) => return Err(ClientError::IoError(e))
         };
@@ -165,7 +171,9 @@ impl Client {
 
         // First check if the file exists
         if !absolute_path.exists() {
-            return Err(ClientError::FileNotFound { path: absolute_path });
+            return Err(ClientError::FileNotFound {
+                path: absolute_path
+            });
         }
         
         // Get stored timestamp
@@ -178,7 +186,9 @@ impl Client {
         let (current_content, metadata) = match read_result {
             Ok(result) => result,
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
-                return Err(ClientError::FileNotFound { path: absolute_path });
+                return Err(ClientError::FileNotFound {
+                    path: absolute_path
+                });
             }
             Err(e) => return Err(ClientError::IoError(e))
         };

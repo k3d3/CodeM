@@ -30,7 +30,7 @@ async fn test_overlapping_patterns() {
         });
 
         let result = write_file(&file_path, operation, None).await;
-        assert!(matches!(result, Err(WriteError::InvalidPatternPair)));
+        assert!(matches!(result, Err(WriteError::InvalidPatternPair { content: _ })));
     }
 }
 
@@ -55,7 +55,7 @@ START\n\
     });
 
     let result = write_file(&file_path, operation, None).await;
-    assert!(matches!(result, Err(WriteError::EndPatternBeforeStart)));
+    assert!(matches!(result, Err(WriteError::EndPatternBeforeStart { content: _ })));
 }
 
 #[tokio::test]
@@ -80,7 +80,7 @@ END\n\
     });
 
     let result = write_file(&file_path, operation, None).await;
-    assert!(matches!(result, Err(WriteError::MultipleStartPatternsFound)));
+    assert!(matches!(result, Err(WriteError::MultipleStartPatternsFound { content: _ })));
 }
 
 #[tokio::test]
