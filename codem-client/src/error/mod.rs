@@ -23,7 +23,7 @@ error_set! {
         CommandError(CommandError),
         #[display("Session not found: {id}")]
         SessionNotFound { id: String },
-        #[display("Attempted to write to a file was not previously read")]
+        #[display("Attempted to write to a file was not previously read in this session")]
         FileNotSynced {
             content: Option<String>,
         },
