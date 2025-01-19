@@ -24,18 +24,53 @@ pub struct SessionManager {
 impl SessionManager {
     pub async fn new(config: ClientConfig) -> Self {
         let metadata = Metadata::new(config.session_file.clone()).await;
+        let path_validator = path::PathValidator::new(config.clone());
+        let metadata_arc = Arc::new(Mutex::new(metadata));
+
+        let sessions = Self::restore_sessions(&config, metadata_arc.clone(), &path_validator).await;
+        let sessions_map = Arc::new(Mutex::new(sessions));
+
         Self {
-            config: config.clone(),
-            sessions: Arc::new(Mutex::new(HashMap::new())),
-            metadata: Arc::new(Mutex::new(metadata)),
-            path_validator: path::PathValidator::new(config),
+            config,
+            sessions: sessions_map,
+            metadata: metadata_arc,
+            path_validator,
         }
+    }
+
+    async fn restore_sessions(
+        config: &ClientConfig,
+        metadata: Arc<Mutex<Metadata>>,
+        path_validator: &path::PathValidator,
+    ) -> HashMap<String, Session> {
+        let mut sessions = HashMap::new();
+        let metadata_guard = metadata.lock().await;
+
+        for session_id in metadata_guard.get_session_ids() {
+            if let Some(project_name) = metadata_guard.get_session_project(&session_id) {
+                if let Some(project) = config.projects.get(&project_name).cloned() {
+                    tracing::info!("Restoring session {} for project {}", session_id, project_name);
+                    let session = Session::new(
+                        session_id.clone(),
+                        project,
+                        metadata_guard.clone(),
+                        path_validator.clone(),
+                    );
+                    sessions.insert(session_id, session);
+                } else {
+                    tracing::warn!("Project {} not found for session {}", project_name, session_id);
+                }
+            }
+        }
+
+        tracing::info!("Restored {} sessions", sessions.len());
+        sessions
     }
 
     pub async fn get_session(&self, session_id: &str) -> Result<Session, ClientError> {
         let sessions = self.sessions.lock().await;
         sessions.get(session_id)
-        .cloned()
+            .cloned()
             .ok_or_else(|| ClientError::SessionNotFound { id: session_id.to_string() })
     }
 

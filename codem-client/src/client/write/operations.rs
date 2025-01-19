@@ -5,7 +5,6 @@ use codem_core::{
     command::run_command
 };
 use std::path::Path;
-use tokio::fs;
 
 pub(crate) async fn handle_operation(
     client: &crate::Client,

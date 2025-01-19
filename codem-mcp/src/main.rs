@@ -1,6 +1,8 @@
 use clap::Parser;
 use std::{path::PathBuf, fs};
 use anyhow::{Result, Context};
+use tracing::{info, error, warn};
+use tracing_subscriber::{self, fmt::format::FmtSpan};
 
 mod error;
 mod server;
@@ -21,8 +23,19 @@ struct Cli {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    // Initialize tracing subscriber
+    tracing_subscriber::fmt()
+        .with_file(true)
+        .with_line_number(true)
+        .with_ansi(false)
+        .with_span_events(FmtSpan::CLOSE)
+        .without_time()
+        .init();
+
+    info!("Starting Codem MCP server");
     let cli = Cli::parse();
     
+    info!("Reading config file: {}", cli.config.display());
     // Parse config file
     let config_str = fs::read_to_string(&cli.config)
         .with_context(|| format!("Failed to read config file: {}", cli.config.display()))?;
@@ -36,6 +49,7 @@ async fn main() -> Result<()> {
         .context("Failed to create client config")?;
         
     // Start server - now async all the way through
+    info!("Starting server...");
     server::serve(config).await?;
     
     Ok(())
