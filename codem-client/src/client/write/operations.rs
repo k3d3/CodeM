@@ -5,6 +5,7 @@ use codem_core::{
     command::run_command
 };
 use std::path::Path;
+use tokio::fs;
 
 pub(crate) async fn handle_operation(
     client: &crate::Client,
@@ -21,6 +22,9 @@ pub(crate) async fn handle_operation(
 
     // Validate the path
     client.sessions.check_path(session_id, &absolute_path).await?;
+
+    // Check timestamp/sync which now includes file content if needed
+    session.get_timestamp(&absolute_path).await?;
 
     // Perform the write operation
     let result = write_file(&absolute_path, operation, None)
@@ -54,7 +58,12 @@ pub(crate) async fn handle_new_file(
     // Create the new file
     let result = write_new_file(&absolute_path, content)
         .await
-        .map_err(ClientError::WriteError)?;
+        .map_err(|e| match e {
+            codem_core::WriteError::FileExists { content } => ClientError::WriteError(
+                codem_core::WriteError::FileExists { content }
+            ),
+            other => ClientError::WriteError(other)
+        })?;
 
     // Run test command if requested
     if run_test {

@@ -6,6 +6,7 @@ use crate::{
     session::{SessionInfo, SessionId},
 };
 use super::{metadata::Metadata, path::PathValidator};
+use tokio::fs;
 
 #[derive(Clone)]
 pub struct Session {
@@ -41,8 +42,19 @@ impl Session {
     }
 
     pub async fn get_timestamp(&self, path: &Path) -> Result<SystemTime, ClientError> {
+        // Read file content first so we have it for potential error case
+        let file_content = fs::read_to_string(path).await.ok();
+        
         let metadata = self.metadata.read().await;
-        metadata.get_timestamp(&self.id, path)
+        metadata.get_timestamp(&self.id, path).map_err(|e| {
+            if let ClientError::FileNotSynced { .. } = e {
+                ClientError::FileNotSynced { 
+                    content: file_content
+                }
+            } else {
+                e
+            }
+        })
     }
 
     pub async fn update_timestamp(&self, path: &Path, timestamp: SystemTime) -> Result<(), ClientError> {
