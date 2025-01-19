@@ -10,7 +10,7 @@ use crate::tests::common::create_test_client;
 async fn test_create_and_get_session() {
     let dir = TempDir::new().unwrap();
     fs::create_dir_all(dir.path().join("session")).unwrap();
-    let client = create_test_client(dir.path(), None);
+    let client = create_test_client(dir.path(), None).await;
     let session_id = client.create_session("test").await.unwrap();
 
     assert!(session_id.len() > 0);

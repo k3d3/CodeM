@@ -26,7 +26,7 @@ async fn test_run_command() {
         vec![r"^echo .*".to_string()],  // echo is safe
         vec![r"^rm .*".to_string()]     // rm is risky
     ).unwrap();
-    let client = Client::new(config);
+    let client = Client::new(config).await;
 
     let session_id = client.create_session("test").await.unwrap();
 
@@ -61,7 +61,7 @@ async fn test_run_command() {
         vec![r"^echo .*".to_string()],  // echo is safe
         vec![r"^rm .*".to_string()]     // rm is risky
     ).unwrap();
-    let client2 = Client::new(config2);
+    let client2 = Client::new(config2).await;
 
     let session_id2 = client2.create_session("test").await.unwrap();
     let result = client2.run_test_command(&session_id2).await;

@@ -1,7 +1,7 @@
 use std::path::Path;
 use crate::{Client, Project, config::ClientConfig};
 
-pub fn create_test_client(base_path: impl AsRef<Path>, test_command: Option<String>) -> Client {
+pub async fn create_test_client(base_path: impl AsRef<Path>, test_command: Option<String>) -> Client {
     let base_dir = base_path.as_ref();
     
     // Create session directory
@@ -32,6 +32,5 @@ pub fn create_test_client(base_path: impl AsRef<Path>, test_command: Option<Stri
         ]
     ).unwrap();
 
-    Client::new(config)
+    Client::new(config).await
 }
-

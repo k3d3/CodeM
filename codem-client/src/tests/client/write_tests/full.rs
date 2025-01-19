@@ -11,7 +11,7 @@ async fn test_full_write() {
     let file_path = temp_dir.path().join("test.txt");
     fs::write(&file_path, "original content").unwrap();
 
-    let client = create_test_client(temp_dir.path(), None);
+    let client = create_test_client(temp_dir.path(), None).await;
     let session_id = client.create_session("test").await.unwrap();
 
     client.read_file(&session_id, &file_path).await.unwrap();

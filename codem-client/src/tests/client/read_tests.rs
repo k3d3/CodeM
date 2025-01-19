@@ -12,7 +12,7 @@ async fn test_read_file() {
     fs::write(&file_path, content).unwrap();
 
     let temp_path = temp_dir.path();
-    let client = create_test_client(temp_path, None);
+    let client = create_test_client(temp_path, None).await;
     let session_id = client.create_session("test").await.unwrap();
 
     // Reading should succeed and match contents
@@ -32,7 +32,7 @@ async fn test_read_file() {
 async fn test_nonexistent_file() {
     let temp_dir = TempDir::new().unwrap();
     let temp_path = temp_dir.path();
-    let client = create_test_client(temp_path, None);
+    let client = create_test_client(temp_path, None).await;
     let session_id = client.create_session("test").await.unwrap();
 
     let result = client.read_file(
@@ -53,7 +53,7 @@ async fn test_large_file() {
     let large_content = "x".repeat(1_000_000);
     fs::write(&file_path, &large_content).unwrap();
 
-    let client = create_test_client(temp_path, None);
+    let client = create_test_client(temp_path, None).await;
     let session_id = client.create_session("test").await.unwrap();
 
     let (result, _metadata) = client.read_file(&session_id, &file_path).await.unwrap();

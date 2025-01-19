@@ -4,7 +4,7 @@ use jsonrpc_stdio_server::jsonrpc_core::Value;
 
 #[tokio::test]
 async fn test_read_multiple_files_no_paths() {
-    let (mcp, _temp_dir) = create_test_env("test_project");
+    let (mcp, _temp_dir) = create_test_env("test_project").await;
 
     let session_id = mcp.client.create_session("test_project").await.unwrap();
     let paths: Vec<String> = vec![];

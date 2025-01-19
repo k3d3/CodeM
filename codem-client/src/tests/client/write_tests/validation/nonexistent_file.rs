@@ -8,7 +8,7 @@ use crate::error::ClientError;
 #[tokio::test]
 async fn test_write_nonexistent_file() {
     let temp_dir = TempDir::new().unwrap();
-    let client = create_test_client(temp_dir.path(), None);
+    let client = create_test_client(temp_dir.path(), None).await;
 
     // Create session and let it initialize
     let session_id = client.create_session("test").await.unwrap();
@@ -32,8 +32,8 @@ async fn test_write_nonexistent_file() {
 
     match result {
         Ok(_) => panic!("Expected write to nonexistent file to fail"),
-        Err(ClientError::FileNotFound { .. }) => (), // Expected error
-        err => panic!("Expected FileNotFound, got {:?}", err)
+        Err(ClientError::InvalidPath { .. }) => (), // Expected error
+        err => panic!("Expected InvalidPath error, got {:?}", err)
     }
 
     // Try to write to nonexistent directory
@@ -49,7 +49,7 @@ async fn test_write_nonexistent_file() {
 
     match result {
         Ok(_) => panic!("Expected write to nonexistent directory to fail"),
-        Err(ClientError::FileNotFound { .. }) => (), // Expected error  
-        err => panic!("Expected FileNotFound, got {:?}", err)
+        Err(ClientError::InvalidPath { .. }) => (), // Expected error
+        err => panic!("Expected InvalidPath error, got {:?}", err)
     }
 }

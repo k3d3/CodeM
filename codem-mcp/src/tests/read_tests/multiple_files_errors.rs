@@ -4,7 +4,7 @@ use jsonrpc_stdio_server::jsonrpc_core::Value;
 
 #[tokio::test]
 async fn test_read_multiple_files_with_nonexistent() {
-    let (mcp, _temp_dir) = create_test_env("test_project");
+    let (mcp, _temp_dir) = create_test_env("test_project").await;
     create_test_files(&_temp_dir, "test_project");
 
     let session_id = mcp.client.create_session("test_project").await.unwrap();

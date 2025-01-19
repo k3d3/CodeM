@@ -6,7 +6,7 @@ use crate::tests::common::create_test_client;
 #[tokio::test]
 async fn test_write_nonexistent_session() {
     let temp_dir = TempDir::new().unwrap();
-    let client = create_test_client(temp_dir.path(), None);
+    let client = create_test_client(temp_dir.path(), None).await;
     let file_path = temp_dir.path().join("test.txt");
     fs::write(&file_path, "initial content").unwrap();
 

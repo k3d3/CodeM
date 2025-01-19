@@ -25,6 +25,6 @@ async fn test_basic_list() {
     let temp_dir = TempDir::new().unwrap();
     let config = create_test_config(&temp_dir);
     
-    let client = Client::new(config);
+    let client = Client::new(config).await;
     let _session_id = client.create_session("test").await.unwrap();
 }

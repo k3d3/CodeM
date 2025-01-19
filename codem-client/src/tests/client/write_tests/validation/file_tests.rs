@@ -6,7 +6,7 @@ use crate::tests::common::create_test_client;
 #[tokio::test]
 async fn test_write_nonexistent_file() {
     let temp_dir = TempDir::new().unwrap();
-    let client = create_test_client(temp_dir.path(), None);
+    let client = create_test_client(temp_dir.path(), None).await;
     
     // Create session and let it initialize
     let session_id = client.create_session("test").await.unwrap();
@@ -30,7 +30,7 @@ async fn test_write_nonexistent_file() {
 
     assert!(result.is_err());
     match result.unwrap_err() {
-        ClientError::FileNotFound { .. } => (), // Expected error
+        ClientError::InvalidPath { .. } => (), // Expected error
         err => panic!("Expected FileNotFound, got {:?}", err),
     }
 }
@@ -38,7 +38,7 @@ async fn test_write_nonexistent_file() {
 #[tokio::test]
 async fn test_write_readable_not_writable_file() {
     let temp_dir = TempDir::new().unwrap();
-    let client = create_test_client(temp_dir.path(), None);
+    let client = create_test_client(temp_dir.path(), None).await;
     let session_id = client.create_session("test").await.unwrap();
 
     let file_path = temp_dir.path().join("test.txt");

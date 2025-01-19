@@ -6,7 +6,7 @@ use crate::tests::common::create_test_client;
 #[tokio::test]
 async fn test_list_directory() {
     let test_dir = TempDir::new().unwrap();
-    let client = create_test_client(test_dir.path(), None);
+    let client = create_test_client(test_dir.path(), None).await;
     let session_id = client.create_session("test").await.unwrap();
 
     // Create test files/dirs in a subdirectory to avoid session dir

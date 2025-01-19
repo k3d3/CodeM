@@ -9,7 +9,7 @@ async fn test_grep_file() {
     let file_path = dir.path().join("file1.txt");
     fs::write(&file_path, "test content\nother line\ntest pattern").unwrap();
 
-    let client = create_test_client(dir.path(), None);
+    let client = create_test_client(dir.path(), None).await;
     let session_id = client.create_session("test").await.unwrap();
 
     let file_matches = client.grep_file(
@@ -33,7 +33,7 @@ async fn test_grep_codebase() {
     fs::write(&file1_path, "test123\nother line").unwrap();
     fs::write(&file2_path, "more content\ntest456").unwrap();
 
-    let client = create_test_client(dir.path(), None);
+    let client = create_test_client(dir.path(), None).await;
     let session_id = client.create_session("test").await.unwrap();
 
     let file1_matches = client.grep_file(
@@ -63,7 +63,7 @@ async fn test_grep_codebase() {
 async fn temp_test_grep_codebase() {
     let mut found_file = false;
 
-    let client = create_test_client("/home/main/src/claude/codem", None);
+    let client = create_test_client("/home/main/src/claude/codem", None).await;
 
     let session_id = client.create_session("test").await.unwrap();
 
@@ -94,7 +94,7 @@ async fn test_grep_empty_result() {
     let file_path = dir.path().join("file1.txt");
     fs::write(&file_path, "test content").unwrap();
 
-    let client = create_test_client(dir.path(), None);
+    let client = create_test_client(dir.path(), None).await;
     let session_id = client.create_session("test").await.unwrap();
 
     let matches = client.grep_file(

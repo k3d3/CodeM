@@ -12,7 +12,7 @@ async fn test_partial_happy_path() {
     let file_path = temp_dir.path().join("test.txt");
     fs::write(&file_path, "line1\nline2\nline3\n").unwrap();
 
-    let client = create_test_client(temp_dir.path(), None);
+    let client = create_test_client(temp_dir.path(), None).await;
     let session_id = client.create_session("test").await.unwrap();
 
     client.read_file(&session_id, &file_path).await.unwrap();

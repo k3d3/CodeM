@@ -6,7 +6,7 @@ use crate::tests::common::create_test_client;
 #[tokio::test]
 async fn test_pattern_match() {
     let test_dir = TempDir::new().unwrap();
-    let client = create_test_client(test_dir.path(), None);
+    let client = create_test_client(test_dir.path(), None).await;
 
     fs::create_dir(test_dir.path().join("dir1")).unwrap();
     fs::create_dir(test_dir.path().join("dir2")).unwrap();

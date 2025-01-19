@@ -25,7 +25,7 @@ async fn test_basic_read() -> Result<(), ClientError> {
     fs::write(&test_file, "test content").map_err(ClientError::from)?;
 
     let config = create_test_config(&temp);
-    let client = Client::new(config);
+    let client = Client::new(config).await;
     let session_id = client.create_session("test").await?;
 
     let (content, _metadata) = client.read_file(&session_id, &test_file).await?;

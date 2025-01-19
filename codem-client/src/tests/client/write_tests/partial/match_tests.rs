@@ -14,7 +14,7 @@ async fn test_partial_match() {
     let file_path = temp_dir.path().join("test.txt");
     fs::write(&file_path, file_content).unwrap();
 
-    let client = create_test_client(temp_dir.path(), None);
+    let client = create_test_client(temp_dir.path(), None).await;
     let session_id = client.create_session("test").await.unwrap();
 
     // Read first to cache timestamp
