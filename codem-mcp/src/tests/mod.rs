@@ -5,6 +5,7 @@ use std::fs;
 use tempfile::TempDir;
 
 mod read_tests;
+mod failing_test;
 
 #[test]
 fn test_new() {

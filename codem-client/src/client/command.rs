@@ -115,7 +115,7 @@ impl crate::Client {
         let output = run_command(test_command, cwd, None).await?;
 
         if output.exit_code != 0 {
-            return Err(ClientError::TestCommandFailed { message: output.stderr });
+            return Err(ClientError::TestCommandFailed { stdout: output.stdout, stderr: output.stderr, exit_code: output.exit_code });
         }
         
         // Combine stdout and stderr

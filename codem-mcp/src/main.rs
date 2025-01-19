@@ -1,7 +1,7 @@
 use clap::Parser;
 use std::{path::PathBuf, fs};
 use anyhow::{Result, Context};
-use tracing::{info, error, warn};
+use tracing::info;
 use tracing_subscriber::{self, fmt::format::FmtSpan};
 
 mod error;

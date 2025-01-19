@@ -35,7 +35,7 @@ error_set! {
         CommandError(CommandError),
         #[display("Session not found: {id}")]
         SessionNotFound { id: String },
-        #[display("Attempted to write to a file was not previously read in this session")]
+        #[display("Attempted to write to a file was not previously read in this session. The file contents have now been read and are below, so you can try writing again.")]
         FileNotSynced {
             content: Option<String>,
         },
@@ -88,8 +88,12 @@ error_set! {
         GrepError(GrepError),
         #[display("Test command not configured")]
         TestCommandNotConfigured,
-        #[display("Test command failed: {message}")]
-        TestCommandFailed { message: String },
+        #[display("Test command failed (exit code {exit_code}):\nstdout:\n{stdout}\nstderr:\n{stderr}")]
+        TestCommandFailed {
+            stdout: String,
+            stderr: String,
+            exit_code: i32,
+        },
         #[display("Toml deserialize error: {0}")]
         TomlDeserializeError(toml::de::Error),
         #[display("Toml serialize error: {0}")]

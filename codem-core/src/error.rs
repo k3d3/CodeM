@@ -49,20 +49,20 @@ error_set! {
     };
 
     CommandError = {
-        #[display("Command failed")]
+        #[display("Command failed (exit code {exit_code}):\nstdout:\n{stdout}\nstderr:\n{stderr}")]
         CommandFailed {
             stdout: String,
             stderr: String,
             exit_code: i32,
         },
-        #[display("Command timed out after {timeout_ms}ms")]
+        #[display("Command timed out after {timeout_ms}ms.\nstdout:\n{stdout}\nstderr:\n{stderr}")]
         Timeout {
             timeout_ms: u64,
             stdout: String,
             stderr: String,
             output: CommandOutput,
         },
-        #[display("IO error when running command")]
+        #[display("IO error when running command: {0}")]
         IoError(std::io::Error),
     };
 }

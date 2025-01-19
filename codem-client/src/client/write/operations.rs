@@ -80,7 +80,7 @@ async fn run_test_command(session: &crate::session::manager::session::Session) -
 
     if output.exit_code != 0 {
         return Err(ClientError::TestCommandFailed {
-            message: String::from_utf8_lossy(output.stderr.as_bytes()).into_owned()
+            stdout: output.stdout, stderr: output.stderr, exit_code: output.exit_code
         });
     }
 
