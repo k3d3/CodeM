@@ -1,4 +1,4 @@
-use jsonrpc_stdio_server::jsonrpc_core::{Value, Result, Error};
+use jsonrpc_stdio_server::jsonrpc_core::{Value, Result};
 use crate::server::Mcp;
 use crate::tools::{
     session,
@@ -12,12 +12,7 @@ use crate::tools::types::ToolCall;
 
 pub async fn handle_tool_call(mcp: &Mcp, call: ToolCall) -> Result<Value> {
     match call.name.as_str() {
-        "create_session" => {
-            let project = call.arguments.get("project")
-                .and_then(|v| v.as_str())
-                .ok_or_else(|| Error::invalid_params("missing project parameter"))?;
-            session::create_session(mcp, project).await
-        },
+        "create_session" => session::create_session(mcp, &call).await,
         "read_files" => handler_read::handle_read_files(mcp, &call).await,
         "list_directory" => handler_read::handle_list_directory(mcp, &call).await,
         "grep_file" => handler_grep::handle_grep_file(mcp, &call).await,

@@ -23,11 +23,6 @@ impl Client {
         
         // Validate the path
         self.sessions.check_path(session_id, &absolute_path).await?;
-        
-        // First check if the file exists
-        if !absolute_path.exists() {
-            return Err(ClientError::FileNotFound { path: absolute_path });
-        }
 
         // Get stored timestamp
         let stored_timestamp = self.sessions.get_timestamp(session_id, &absolute_path).await?;

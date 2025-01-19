@@ -10,7 +10,7 @@ use codem_core::error::{WriteError, CommandError};
 error_set! {
     ClientError = {
         #[display("File not found: {}", path.display())]
-        FileNotFound { path: PathBuf },
+        FileNotFound { path: PathBuf }, // path should be relative to project base
         #[display("IO error: {0}")]
         IoError(std::io::Error),
         #[display("Could not create directory {}", path.display())]
@@ -21,6 +21,8 @@ error_set! {
         CommandError(CommandError),
         #[display("Session not found: {id}")]
         SessionNotFound { id: String },
+        #[display("Attempted to write to a file was not previously read")]
+        FileNotSynced,
         #[display("Path not in project scope: {}", path.display())]
         PathOutOfScope { path: PathBuf },
         #[display("File timestamp mismatch for {}", path.display())]

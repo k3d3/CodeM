@@ -32,7 +32,7 @@ async fn main() -> Result<()> {
         .context("Failed to parse config file")?;
         
     // Then convert to ClientConfig, which performs validation
-    let config = toml_config.into_client_config()
+    let config = toml_config.into_client_config().await
         .context("Failed to create client config")?;
         
     // Start server - now async all the way through

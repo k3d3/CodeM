@@ -47,7 +47,7 @@ impl Session {
 
     pub async fn update_timestamp(&self, path: &Path, timestamp: SystemTime) -> Result<(), ClientError> {
         let mut metadata = self.metadata.write().await;
-        metadata.update_timestamp(&self.id, path, timestamp)
+        metadata.update_timestamp(&self.id, path, timestamp).await
     }
 
     pub async fn to_info(&self) -> SessionInfo {

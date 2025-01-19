@@ -1,5 +1,5 @@
 use std::{collections::HashMap, sync::Arc};
-use tokio::sync::RwLock;
+use tokio::sync::Mutex;
 use crate::{
     config::ClientConfig,
     error::ClientError,
@@ -16,24 +16,24 @@ use session::Session;
 
 pub struct SessionManager {
     config: ClientConfig,
-    sessions: Arc<RwLock<HashMap<String, Session>>>,
-    metadata: Arc<RwLock<Metadata>>,
+    sessions: Arc<Mutex<HashMap<String, Session>>>,
+    metadata: Arc<Mutex<Metadata>>,
     path_validator: path::PathValidator,
 }
 
 impl SessionManager {
-    pub fn new(config: ClientConfig) -> Self {
-        let metadata = Metadata::new(config.session_file.clone());
+    pub async fn new(config: ClientConfig) -> Self {
+        let metadata = Metadata::new(config.session_file.clone()).await;
         Self {
             config: config.clone(),
-            sessions: Arc::new(RwLock::new(HashMap::new())),
-            metadata: Arc::new(RwLock::new(metadata)),
+            sessions: Arc::new(Mutex::new(HashMap::new())),
+            metadata: Arc::new(Mutex::new(metadata)),
             path_validator: path::PathValidator::new(config),
         }
     }
 
     pub async fn get_session(&self, session_id: &str) -> Result<Session, ClientError> {
-        let sessions = self.sessions.read().await;
+        let sessions = self.sessions.lock().await;
         sessions.get(session_id)
         .cloned()
             .ok_or_else(|| ClientError::SessionNotFound { id: session_id.to_string() })
@@ -46,11 +46,11 @@ impl SessionManager {
         let session = Session::new(
             session_id.clone(),
             project,
-            self.metadata.write().await.clone(),
+            self.metadata.lock().await.clone(),
             self.path_validator.clone(),
         );
 
-        self.sessions.write().await.insert(session_id.clone(), session);
+        self.sessions.lock().await.insert(session_id.clone(), session);
         
         Ok(session_id)
     }

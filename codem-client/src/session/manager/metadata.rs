@@ -1,5 +1,5 @@
 use std::path::{PathBuf, Path};
-use std::fs;
+use tokio::fs;
 use std::io;
 use crate::error::ClientError;
 use std::time::SystemTime;
@@ -30,13 +30,13 @@ pub struct Metadata {
 }
 
 impl Metadata {
-    pub fn new(file: PathBuf) -> Self {
-        let timestamps = Self::load_file(&file).unwrap_or_default();
+    pub async fn new(file: PathBuf) -> Self {
+        let timestamps = Self::load_file(&file).await.unwrap_or_default();
         Self { file, timestamps }
     }
 
-    fn load_file(path: &Path) -> io::Result<HashMap<String, HashMap<PathBuf, SystemTime>>> {
-        let contents = match fs::read_to_string(path) {
+    async fn load_file(path: &Path) -> io::Result<HashMap<String, HashMap<PathBuf, SystemTime>>> {
+        let contents = match fs::read_to_string(path).await {
             Ok(c) => c,
             Err(e) if e.kind() == io::ErrorKind::NotFound => return Ok(HashMap::new()),
             Err(e) => return Err(e),
@@ -60,7 +60,7 @@ impl Metadata {
         Ok(timestamps)
     }
 
-    fn save_file(&self) -> Result<(), ClientError> {
+    async fn save_file(&self) -> Result<(), ClientError> {
         // Convert to serializable format
         let serializable: HashMap<String, HashMap<String, SerializableTimestamp>> = self.timestamps
             .iter()
@@ -75,7 +75,8 @@ impl Metadata {
             .collect();
 
         let toml_str = toml::to_string(&serializable)?;
-        Ok(fs::write(&self.file, toml_str)?)
+        fs::write(&self.file, toml_str).await?;
+        Ok(())
     }
 
     pub fn get_session_timestamps(&self, session_id: &str) -> HashMap<PathBuf, SystemTime> {
@@ -87,20 +88,20 @@ impl Metadata {
     pub fn get_timestamp(&self, session_id: &str, path: &Path) -> Result<SystemTime, ClientError> {
         let path = path.to_path_buf();
         let session_stamps = self.timestamps.get(session_id)
-            .ok_or_else(|| ClientError::SessionNotFound { id: session_id.into() })?;
+            .ok_or_else(|| ClientError::FileNotSynced)?;
 
         session_stamps.get(&path)
             .cloned()
             .ok_or(ClientError::InvalidPath { path })
     }
 
-    pub fn update_timestamp(&mut self, session_id: &str, path: &Path, timestamp: SystemTime) -> Result<(), ClientError> {
+    pub async fn update_timestamp(&mut self, session_id: &str, path: &Path, timestamp: SystemTime) -> Result<(), ClientError> {
         let session_stamps = self.timestamps
             .entry(session_id.to_string())
             .or_default();
 
         session_stamps.insert(path.to_path_buf(), timestamp);
-        self.save_file()?;
+        self.save_file().await?;
 
         Ok(())
     }

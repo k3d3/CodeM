@@ -4,7 +4,7 @@ use codem_client::Project;
 use std::fs;
 use tempfile::TempDir;
 
-pub fn create_test_env(project_name: &str) -> (Mcp, TempDir) {
+pub async fn create_test_env(project_name: &str) -> (Mcp, TempDir) {
     let temp_dir = TempDir::new().unwrap();
     let temp_path = temp_dir.path();
 
@@ -29,7 +29,7 @@ pub fn create_test_env(project_name: &str) -> (Mcp, TempDir) {
         vec![]
     ).unwrap();
 
-    (Mcp::new(config), temp_dir)
+    (Mcp::new(config).await, temp_dir)
 }
 
 pub fn create_test_files(temp_dir: &TempDir, project_name: &str) {

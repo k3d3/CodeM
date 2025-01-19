@@ -11,16 +11,16 @@ pub struct Mcp {
 }
 
 impl Mcp {
-    pub fn new(config: ClientConfig) -> Self {
+    pub async fn new(config: ClientConfig) -> Self {
         Self {
-            client: Client::new(config)
+            client: Client::new(config).await
         }
     }
 }
 
 /// Create and run MCP server with given config
 pub async fn serve(config: ClientConfig) -> Result<()> {
-    let mcp = Arc::new(Mcp::new(config)); 
+    let mcp = Arc::new(Mcp::new(config).await); 
     let mut io = IoHandler::default();
 
     // Register initialization

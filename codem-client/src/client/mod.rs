@@ -12,9 +12,9 @@ pub struct Client {
 }
 
 impl Client {
-    pub fn new(config: ClientConfig) -> Self {
+    pub async fn new(config: ClientConfig) -> Self {
         Self {
-            sessions: SessionManager::new(config)
+            sessions: SessionManager::new(config).await
         }
     }
 
