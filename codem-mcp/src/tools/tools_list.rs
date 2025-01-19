@@ -12,12 +12,12 @@ pub fn list_tools() -> Value {
             },
             {
                 "name": "read_files",
-                "description": "Read the contents of one or more files",
+                "description": "Read the contents of one or more files. To reduce the number of times read_files is called, if you have to read many files at once, you should provide all of them to one read_files call, rather than making multiple read_files calls.",
                 "inputSchema": read::read_files_schema()
             },
             {
                 "name": "list_directory",
-                "description": "List contents of a directory with optional regex filtering",
+                "description": "List contents of a directory with optional path regex filtering",
                 "inputSchema": list::list_directory_schema()
             },
             {
@@ -37,17 +37,17 @@ pub fn list_tools() -> Value {
             },
             {
                 "name": "write_file_full",
-                "description": "Write complete new content to a file",
+                "description": "Write complete new content to a file. This tool is expensive! Try to use write_file_small or write_file_large, and only use write_file_full if you need to fully rewrite the file or one of small/large fails.",
                 "inputSchema": write::write_file_full_schema()
             },
             {
                 "name": "write_file_small", 
-                "description": "Make small text replacements in a file",
+                "description": "Make small text replacements in a file. The old_str argument must be unique in the file, unless you set allow_multiple_matches to true.",
                 "inputSchema": write::write_file_small_schema()
             },
             {
                 "name": "write_file_large",
-                "description": "Replace a large section of text between start and end markers",
+                "description": "Replace a large section of text between start and end markers. These markers must be unique in the file.",
                 "inputSchema": write::write_file_large_schema()
             },
             {
@@ -62,7 +62,7 @@ pub fn list_tools() -> Value {
             },
             {
                 "name": "run_test_command",
-                "description": "Run the test command configured for the project",
+                "description": "Run the test command configured for the project. You should always test after you finish making a change to the codebase.",
                 "inputSchema": session_only_schema()
             }
         ]

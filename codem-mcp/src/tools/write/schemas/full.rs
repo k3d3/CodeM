@@ -19,7 +19,7 @@ pub fn schema() -> Value {
             },
             "run_test": {
                 "type": "boolean",
-                "description": "Whether to run tests after write",
+                "description": "Whether to run tests after write. Highly recommended if this is the last write operation in a series.",
                 "default": false
             }
         },
