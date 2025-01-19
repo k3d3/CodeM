@@ -4,6 +4,10 @@ use crate::types::CommandOutput;
 
 error_set! {
     WriteError = {
+        #[display("File already exists")]
+        FileExists {
+            content: String,
+        },
         #[display("IO error when writing file")]
         IoError(std::io::Error),
         #[display("Aho-Corasick error")]

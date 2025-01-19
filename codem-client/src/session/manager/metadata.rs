@@ -92,8 +92,8 @@ impl Metadata {
 
         session_stamps.get(&path)
             .cloned()
-            .ok_or(ClientError::InvalidPath { 
-                path,
+            .ok_or_else(|| ClientError::FileNotSynced { 
+                content: None 
             })
     }
 

@@ -61,6 +61,32 @@ pub fn write_file_small_schema() -> Value {
     })
 }
 
+pub fn write_new_file_schema() -> Value {
+    json!({
+        "type": "object",
+        "properties": {
+            "session_id": {
+                "type": "string",
+                "description": "Session ID to use for writing"
+            },
+            "path": {
+                "type": "string",
+                "description": "Path to new file to create (relative to project root)"
+            },
+            "content": {
+                "type": "string",
+                "description": "Content to write to the new file"
+            },
+            "run_test": {
+                "type": "boolean",
+                "description": "Whether to run tests after write",
+                "default": true
+            }
+        },
+        "required": ["session_id", "path", "content"]
+    })
+}
+
 pub fn write_file_large_schema() -> Value {
     json!({
         "type": "object",

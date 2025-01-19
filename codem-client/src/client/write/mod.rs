@@ -5,7 +5,7 @@ use codem_core::{
 }; 
 use crate::{Client, error::ClientError};
 
-mod operations;
+pub(crate) mod operations;
 
 impl Client {
     pub async fn write_file_full(

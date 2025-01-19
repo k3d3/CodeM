@@ -4,7 +4,7 @@ pub mod write;
 
 use crate::{error::ClientError, config::ClientConfig};
 use crate::session::manager::SessionManager;
-use codem_core::types::{GrepFileMatch, GrepOptions};
+use codem_core::types::{GrepFileMatch, GrepOptions, WriteResult};
 use std::path::Path;
 
 pub struct Client {
@@ -14,8 +14,18 @@ pub struct Client {
 impl Client {
     pub async fn new(config: ClientConfig) -> Self {
         Self {
-            sessions: SessionManager::new(config).await
+            sessions: SessionManager::new(config).await,
         }
+    }
+
+        pub async fn write_new_file(
+        &self,
+        session_id: &str,
+        path: &Path,
+        content: &str,
+        run_test: bool,
+    ) -> Result<WriteResult, ClientError> {
+        write::operations::handle_new_file(self, session_id, path, content, run_test).await
     }
 
     pub async fn create_session(&self, project: &str) -> Result<String, ClientError> {

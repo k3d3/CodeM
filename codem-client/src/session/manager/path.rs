@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use crate::{error::ClientError, config::ClientConfig};
 
 #[derive(Clone)]
@@ -7,6 +7,23 @@ pub struct PathValidator {
 }
 
 impl PathValidator {
+    pub fn to_relative_path(&self, path: &Path) -> PathBuf {
+        for project in self.config.projects.values() {
+            if let Ok(relative) = path.strip_prefix(&project.base_path) {
+                return relative.to_path_buf();
+            }
+            
+            if let Some(ref allowed_paths) = project.allowed_paths {
+                for allowed_path in allowed_paths {
+                    if let Ok(relative) = path.strip_prefix(allowed_path) {
+                        return relative.to_path_buf();
+                    }
+                }
+            }
+        }
+        path.to_path_buf()
+    }
+
     pub fn new(config: ClientConfig) -> Self {
         Self { config }
     }

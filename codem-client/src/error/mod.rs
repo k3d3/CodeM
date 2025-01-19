@@ -7,15 +7,27 @@ use std::{path::PathBuf, time::SystemTime};
 use error_set::error_set;
 use codem_core::error::{WriteError, CommandError};
 
+use crate::session::manager::path::PathValidator;
+
+pub trait ToRelativePath {
+    fn to_relative_display(&self, validator: &PathValidator) -> String;
+}
+
+impl ToRelativePath for PathBuf {
+    fn to_relative_display(&self, validator: &PathValidator) -> String {
+        validator.to_relative_path(self).display().to_string()
+    }
+}
+
 error_set! {
     ClientError = {
-        #[display("File not found: {}", path.display())]
+        #[display("File not found: {}", path.to_string_lossy())]
         FileNotFound { 
             path: PathBuf,
         },
         #[display("IO error: {0}")]
         IoError(std::io::Error),
-        #[display("Could not create directory {}", path.display())]
+        #[display("Could not create directory {}", path.to_string_lossy())]
         DirCreateError { path: PathBuf },
         #[display("Write error: {0}")]
         WriteError(WriteError),
@@ -27,7 +39,7 @@ error_set! {
         FileNotSynced {
             content: Option<String>,
         },
-        #[display("Path not in project scope: {}", path.display())]
+        #[display("Path not in project scope: {}", path.to_string_lossy())]
         PathOutOfScope { 
             path: PathBuf,
         },
@@ -52,20 +64,20 @@ error_set! {
             path: PathBuf,
             content: Option<String>,
         },
-        #[display("Path not allowed: {}", path.display())]
+        #[display("Path not allowed: {}", path.to_string_lossy())]
         PathNotAllowed { 
             path: PathBuf,
         },
-        #[display("Invalid path: {}", path.display())]
+        #[display("Invalid path: {}", path.to_string_lossy())]
         InvalidPath { 
             path: PathBuf,
         },
-        #[display("Path exists: {}", path.display())]
+        #[display("Path exists: {}", path.to_string_lossy())]
         PathExists { 
             path: PathBuf,
             content: Option<String>,
         },
-        #[display("Permission denied: {}", path.display())]
+        #[display("Permission denied: {}", path.to_string_lossy())]
         PermissionDenied { 
             path: PathBuf,
             content: Option<String>,

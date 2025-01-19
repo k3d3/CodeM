@@ -6,6 +6,35 @@ use std::path::Path;
 use std::time::SystemTime;
 use tokio::fs;
 
+pub async fn write_new_file(
+    path: &Path,
+    contents: &str,
+) -> Result<WriteResult, WriteError> {
+    if path.exists() {
+        let current_content = fs::read_to_string(path).await?;
+        return Err(WriteError::FileExists { 
+            content: current_content 
+        });
+    }
+
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+
+    fs::write(path, &contents).await?;
+
+    // Re-gather metadata for the written path
+    let metadata = fs::metadata(path).await?;
+
+    let result = WriteResult {
+        line_count: contents.lines().count(),
+        size: contents.len(),
+        modified: metadata.modified().unwrap(),
+        details: WriteResultDetails::None,
+    };
+    Ok(result)
+}
+
 pub async fn write_file(
     path: &Path,
     operation: WriteOperation,

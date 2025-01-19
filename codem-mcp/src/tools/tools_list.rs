@@ -31,6 +31,11 @@ pub fn list_tools() -> Value {
                 "inputSchema": grep::grep_codebase_schema()
             },
             {
+                "name": "write_new_file",
+                "description": "Create a new file with the specified content",
+                "inputSchema": write::schemas::write_new_file_schema()
+            },
+            {
                 "name": "write_file_full",
                 "description": "Write complete new content to a file",
                 "inputSchema": write::write_file_full_schema()

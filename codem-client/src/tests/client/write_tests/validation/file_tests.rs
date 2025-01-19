@@ -30,8 +30,8 @@ async fn test_write_nonexistent_file() {
 
     assert!(result.is_err());
     match result.unwrap_err() {
-        ClientError::InvalidPath { .. } => (), // Expected error
-        err => panic!("Expected FileNotFound, got {:?}", err),
+        ClientError::FileNotSynced { .. } => (), // Expected error
+        err => panic!("Expected FileNotSynced, got {:?}", err),
     }
 }
 

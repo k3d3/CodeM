@@ -1,12 +1,12 @@
 use crate::error::ClientError;
 use codem_core::{
-    fs_write::write_file,
+    fs_write::{write_file, write_new_file},
     types::{WriteOperation, WriteResult},
     command::run_command
 };
 use std::path::Path;
 
-pub(super) async fn handle_operation(
+pub(crate) async fn handle_operation(
     client: &crate::Client,
     session_id: &str,
     path: &Path,
@@ -30,6 +30,35 @@ pub(super) async fn handle_operation(
     // Run test command if requested
     if run_test {
         run_test_command(&session).await?;
+    }
+
+    Ok(result)
+}
+
+pub(crate) async fn handle_new_file(
+    client: &crate::Client,
+    session_id: &str,
+    path: &Path,
+    content: &str,
+    run_test: bool,
+) -> Result<WriteResult, ClientError> {
+    // Get session to access project
+    let session = client.sessions.get_session(session_id).await?;
+
+    // Resolve path relative to project base path
+    let absolute_path = session.project.base_path.join(path);
+
+    // Validate the path
+    client.sessions.check_path(session_id, &absolute_path).await?;
+
+    // Create the new file
+    let result = write_new_file(&absolute_path, content)
+        .await
+        .map_err(ClientError::WriteError)?;
+
+    // Run test command if requested
+    if run_test {
+        run_test_command(&session).await?
     }
 
     Ok(result)
