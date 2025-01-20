@@ -49,11 +49,11 @@ impl Client {
         // Verify timestamps match
         if stored_timestamp != current_timestamp {
             // Update timestamp since we just read the file
-            self.sessions.update_timestamp(session_id, &absolute_path, current_timestamp).await?;
-
-            return Err(ClientError::FileNotSynced {
-                content: Some(current_content)
-            });
+            if let Ok(()) = self.sessions.update_timestamp(session_id, &absolute_path, current_timestamp).await {
+                return Err(ClientError::FileModifiedSinceRead {
+                    content: Some(current_content)
+                });
+            }
         }
 
         let result = operations::handle_operation(

@@ -20,7 +20,7 @@ pub fn schema() -> Value {
                     "properties": {
                         "old_str": {
                             "type": "string",
-                            "description": "Text to find and replace. If this is more than a few lines, consider using write_file_large instead."
+                            "description": "Text to find and replace. Do not let old_str become more than a few lines. If you need to replace lots of content, use write_file_large instead."
                         },
                         "new_str": {
                             "type": "string",

@@ -17,7 +17,7 @@ pub async fn handle_tool_call(mcp: &Mcp, call: ToolCall) -> Result<Value> {
         "list_directory" => handler_read::handle_list_directory(mcp, &call).await,
         "grep_file" => handler_grep::handle_grep_file(mcp, &call).await,
         "grep_codebase" => handler_grep::handle_grep_codebase(mcp, &call).await,
-        "write_new_file" => handler_write::handle_write_new_file(mcp, &call).await,
+        "create_new_file" => handler_write::handle_write_new_file(mcp, &call).await,
         "write_file_full" => handler_write::handle_write_file_full(mcp, &call).await,
         "write_file_small" => handler_write_small::handle_write_file_small(mcp, &call).await,
         "write_file_large" => handler_write::handle_write_file_large(mcp, &call).await,

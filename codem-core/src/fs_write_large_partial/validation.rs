@@ -1,16 +1,30 @@
 use crate::WriteError;
 
-pub fn validate_patterns(start_str: &str, end_str: &str) -> Result<(), WriteError> {
-    let start_str = start_str.trim_end();
-    let end_str = end_str.trim_end();
+pub fn validate_patterns(start_str: &str, end_str: &str) -> Result<(), WriteError> {    
+    if start_str.is_empty() || end_str.is_empty() {
+        return Err(WriteError::InvalidPatternPair { 
+            content: String::from("Start and end patterns cannot be empty")
+        });
+    }
+
+    // Trim for pattern comparison but keep original strings for matching
+    let trimmed_start = start_str.trim();
+    let trimmed_end = end_str.trim();
     
-    if start_str.contains(end_str) {
+    if trimmed_start == trimmed_end {
+        return Err(WriteError::InvalidPatternPair {
+            content: String::from("Start and end patterns cannot be identical when trimmed")
+        });
+    }
+    
+    // Use trimmed patterns for containment checks to avoid whitespace issues
+    if trimmed_start.contains(trimmed_end) {
         return Err(WriteError::InvalidPatternPair { 
             content: format!("End pattern '{}' is contained within start pattern '{}', making it ambiguous where the section ends", 
                 end_str, start_str) 
         });
     }
-    if end_str.contains(start_str) {
+    if trimmed_end.contains(trimmed_start) {
         return Err(WriteError::InvalidPatternPair { 
             content: format!("Start pattern '{}' is contained within end pattern '{}', making it ambiguous where the section starts", 
                 start_str, end_str) 
@@ -46,7 +60,9 @@ pub fn validate_matches(
         });
     }
 
-    if end_matches[0].0 <= start_matches[0].0 {
+    // Check if any end pattern comes before the start pattern
+    let (start_pos, _) = start_matches[0];
+    if end_matches.iter().any(|(end_pos, _)| end_pos < &start_pos) {
         return Err(WriteError::EndPatternBeforeStart { 
             content: file_content.to_string() 
         });

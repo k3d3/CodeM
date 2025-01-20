@@ -31,7 +31,7 @@ pub fn list_tools() -> Value {
                 "inputSchema": grep::grep_codebase_schema()
             },
             {
-                "name": "write_new_file",
+                "name": "create_new_file",
                 "description": "Create a new file with the specified content",
                 "inputSchema": write::write_new_file_schema()
             },
@@ -42,12 +42,12 @@ pub fn list_tools() -> Value {
             },
             {
                 "name": "write_file_small", 
-                "description": "Make one or more small text changes in a file. For each change, the old_str argument must be unique in the file, unless you set allow_multiple_matches to true.",
+                "description": "Make one or more small text changes in a file. For each change, the old_str argument must be unique within the line range provided, unless you set allow_multiple_matches to true.",
                 "inputSchema": write::write_file_small_schema()
             },
             {
                 "name": "write_file_large",
-                "description": "Replace a large section of text between start and end markers. These markers must be unique in the file.",
+                "description": "Replace a large section of text between start and end markers. These markers must be unique within the line range provided.",
                 "inputSchema": write::write_file_large_schema()
             },
             {

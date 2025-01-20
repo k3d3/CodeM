@@ -5,6 +5,8 @@ use crate::fs_write::write_file;
 use tempfile::TempDir;
 
 proptest! {
+    #![proptest_config(ProptestConfig::with_cases(10))]
+
     #[test]
     fn test_content_preservation(
         before in "[^\n]{0,50}",

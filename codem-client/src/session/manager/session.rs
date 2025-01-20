@@ -79,7 +79,9 @@ impl Session {
                 if let Ok(fs_metadata) = fs::metadata(path).await {
                     if let Ok(current_timestamp) = fs_metadata.modified() {
                         if current_timestamp != recorded_timestamp {
-                            // File was modified since last read
+                            // File was modified - update timestamp but still return error
+                            drop(metadata); // Drop lock before async operation
+                            let _ = self.update_timestamp(path, current_timestamp).await;
                             return Err(ClientError::FileModifiedSinceRead { 
                                 content: file_content
                             });
@@ -97,11 +99,11 @@ impl Session {
                 // If file exists, update its timestamp
                 if let Ok(fs_metadata) = fs::metadata(path).await {
                     if let Ok(timestamp) = fs_metadata.modified() {
-                        self.update_timestamp(path, timestamp).await?;
+                        let _ = self.update_timestamp(path, timestamp).await;
                     }
                 }
 
-                // Return FileNotSynced to allow writing
+                // Return FileNotSynced even if we updated timestamp
                 Err(ClientError::FileNotSynced { 
                     content: file_content
                 })
