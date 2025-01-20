@@ -47,7 +47,7 @@ pub fn list_tools() -> Value {
             },
             {
                 "name": "write_file_large",
-                "description": "Replace a large section of text between start and end markers. These markers must be unique within the line range provided.",
+                "description": "Replace a large section of text between start and end markers. Useful for replacing blocks of text. The markers must be unique in the target range, cannot overlap/contain each other, and cannot appear multiple times in the range. More reliable than write_file_full for partial changes that are too large for write_file_small.",
                 "inputSchema": write::write_file_large_schema()
             },
             {

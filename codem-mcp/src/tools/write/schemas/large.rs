@@ -15,15 +15,15 @@ pub fn schema() -> Value {
             },
             "start_str": {
                 "type": "string",
-                "description": "Start of text to replace"
+                "description": "Start marker for text replacement. Must be unique in target range and cannot overlap with end marker"
             },
             "end_str": {
                 "type": "string", 
-                "description": "End of text to replace"
+                "description": "End marker for text replacement. Must be unique, appear after start marker, and not overlap with it"
             },
             "new_str": {
                 "type": "string",
-                "description": "New text to insert between start and end"
+                "description": "New text to replace everything between (and including) the start and end markers"
             },
             "line_range": {
                 "type": "object",

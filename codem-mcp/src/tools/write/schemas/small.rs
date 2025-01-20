@@ -20,7 +20,7 @@ pub fn schema() -> Value {
                     "properties": {
                         "old_str": {
                             "type": "string",
-                            "description": "Text to find and replace. Do not let old_str become more than a few lines. If you need to replace lots of content, use write_file_large instead."
+                            "description": "Text to find and replace - must be unique in the specified line range unless allow_multiple_matches is true. Leading/trailing whitespace is ignored in matching. The text does not need to match entire lines. Keep under a few lines - for larger changes use write_file_large."
                         },
                         "new_str": {
                             "type": "string",
@@ -36,18 +36,18 @@ pub fn schema() -> Value {
                             "properties": {
                                 "start": {
                                     "type": ["integer", "null"],
-                                    "description": "Starting line number (1-based, inclusive) to limit search range for old_str. If null, starts from beginning."
+                                    "description": "Start of search range for finding old_str (1-based, inclusive). Can be approximate - the range just needs to contain exactly one instance of old_str. If null, starts from beginning."
                                 },
                                 "end": {
                                     "type": ["integer", "null"],
-                                    "description": "Ending line number (1-based, inclusive) to limit search range for old_str. If null, continues to end."
+                                    "description": "End of search range for finding old_str (1-based, inclusive). Can be approximate - the range just needs to contain exactly one instance of old_str. If null, continues to end."
                                 }
                             }
                         }
                     },
                     "required": ["old_str", "new_str"]
                 },
-                "description": "List of changes to make - each specifies old text to find and new text to replace it with. YOU MUST WRITE `old_str` BEFORE YOU WRITE `new_str`."
+                "description": "List of changes to make. Each change specifies text to find (old_str) and its replacement (new_str). The line_range can be approximate - it just needs to define a range where old_str appears exactly once (unless allow_multiple_matches is true)."
             },
             "run_test": {
                 "type": "boolean",
