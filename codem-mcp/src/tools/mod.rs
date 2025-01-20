@@ -1,4 +1,5 @@
 pub mod session;
+pub mod format;
 pub mod list;
 pub mod read;
 pub mod grep;

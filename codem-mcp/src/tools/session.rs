@@ -1,7 +1,7 @@
 use serde_json::json;
 use jsonrpc_stdio_server::jsonrpc_core::{Result, Value};
 use codem_core::types::{ListOptions, GrepOptions};
-use crate::{server::Mcp, error::format_error_response};
+use crate::{server::Mcp, error::format_error_response, tools::format::format_tree_entry};
 use crate::tools::types::ToolCall;
 
 pub fn create_session_schema() -> Value {
@@ -115,7 +115,7 @@ pub async fn create_session(mcp: &Mcp, call: &ToolCall) -> Result<Value> {
                     ).await {
                         content.push(json!({
                             "type": "text",
-                            "text": format!("Directory listing:\n{:#?}", list_result)
+                            "text": format!("Directory listing:\n{}", format_tree_entry(&list_result, false))
                         }));
                     }
                 }
