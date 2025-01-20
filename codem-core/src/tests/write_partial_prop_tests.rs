@@ -24,10 +24,12 @@ proptest! {
             let operation = WriteOperation::Partial(PartialWrite {
                 context_lines,
                 return_full_content: true,
+                line_range: None,
                 changes: vec![Change {
                     old_str: pattern,
                     new_str: replacement,
                     allow_multiple_matches: false,
+                    line_range: None,
                 }],
             });
 
@@ -61,10 +63,12 @@ proptest! {
             let operation = WriteOperation::Partial(PartialWrite {
                 context_lines,
                 return_full_content: true,
+                line_range: None,
                 changes: vec![Change {
                     old_str: pattern,
                     new_str: replacement,
                     allow_multiple_matches: false,
+                    line_range: None,
                 }],
             });
 
@@ -97,10 +101,12 @@ proptest! {
             let operation = WriteOperation::Partial(PartialWrite {
                 context_lines,
                 return_full_content: true,
+                line_range: None,
                 changes: vec![Change {
                     old_str: pattern.to_string(),
                     new_str: replacement,
                     allow_multiple_matches: false,
+                    line_range: None,
                 }],
             });
 

@@ -25,6 +25,7 @@ proptest! {
                 end_str: "END\n".to_string(),
                 new_str: format!("{}\n", new_content),
                 context_lines: 1,
+                line_range: None,
             });
 
             let _result = write_file(&file_path, operation, None).await.unwrap();
@@ -34,7 +35,7 @@ proptest! {
             assert!(final_content.starts_with(&format!("{}\n", before)));
             // New content inserted
             assert!(final_content.contains(&format!("{}\n", new_content)));
-            // After content preserved
+            // After content preserved 
             assert!(final_content.ends_with(&format!("{}\n", after)));
         });
     }

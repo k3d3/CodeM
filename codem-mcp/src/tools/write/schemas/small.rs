@@ -30,6 +30,19 @@ pub fn schema() -> Value {
                             "type": "boolean",
                             "description": "Whether to allow replacing multiple matches of old_str. By default this is false to prevent unintended changes.",
                             "default": false
+                        },
+                        "line_range": {
+                            "type": "object",
+                            "properties": {
+                                "start": {
+                                    "type": ["integer", "null"],
+                                    "description": "Starting line number (1-based, inclusive) to limit search range for old_str. If null, starts from beginning."
+                                },
+                                "end": {
+                                    "type": ["integer", "null"],
+                                    "description": "Ending line number (1-based, inclusive) to limit search range for old_str. If null, continues to end."
+                                }
+                            }
                         }
                     },
                     "required": ["old_str", "new_str"]

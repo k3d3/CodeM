@@ -24,6 +24,7 @@ async fn test_partial_match() {
         new_str: "updated\n".to_string(),
         old_str: "line2\n".to_string(),
         allow_multiple_matches: false,
+        line_range: None,
     }];
 
     let result = client

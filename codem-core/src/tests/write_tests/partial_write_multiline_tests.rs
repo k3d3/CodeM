@@ -14,10 +14,12 @@ async fn test_partial_write_multiline() {
     let operation = WriteOperation::Partial(PartialWrite {
         context_lines: 0,
         return_full_content: true,
+        line_range: None,
         changes: vec![Change {
             old_str: "Test\nLine1\nLine2".to_string(),
             new_str: "New".to_string(),
             allow_multiple_matches: false,
+            line_range: None,
         }],
     });
 

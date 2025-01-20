@@ -22,10 +22,12 @@ async fn test_partial_write_matches(
     let operation = WriteOperation::Partial(PartialWrite {
         context_lines: 0,
         return_full_content: true,
+        line_range: None,
         changes: vec![Change {
             old_str: pattern.to_string(),
             new_str: replacement.to_string(),
             allow_multiple_matches: false,
+            line_range: None,
         }],
     });
 

@@ -14,26 +14,96 @@ pub enum WriteOperation {
     PartialLarge(PartialWriteLarge),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Default)]
+pub struct LineRange {
+    pub start: Option<usize>,
+    pub end: Option<usize>,
+}
+
+#[derive(Debug, Default)]
 pub struct PartialWrite {
     pub context_lines: usize,
     pub return_full_content: bool,
     pub changes: Vec<Change>,
+    pub line_range: Option<LineRange>,
 }
 
-#[derive(Debug)]
+/// Helper macro for creating Change structs with minimal boilerplate
+#[macro_export]
+macro_rules! change {
+    ($old:expr, $new:expr) => {
+        Change {
+            old_str: $old.to_string(),
+            new_str: $new.to_string(),
+            allow_multiple_matches: false,
+            line_range: None,
+        }
+    };
+    ($old:expr, $new:expr, allow_multiple: $allow:expr) => {
+        Change {
+            old_str: $old.to_string(),
+            new_str: $new.to_string(),
+            allow_multiple_matches: $allow,
+            line_range: None,
+        }
+    };
+    ($old:expr, $new:expr, range: $range:expr) => {
+        Change {
+            old_str: $old.to_string(),
+            new_str: $new.to_string(),
+            allow_multiple_matches: false,
+            line_range: Some($range),
+        }
+    };
+}
+
+#[derive(Debug, Clone)]
 pub struct Change {
     pub old_str: String,
     pub new_str: String,
     pub allow_multiple_matches: bool,
+    pub line_range: Option<LineRange>,
 }
 
-#[derive(Debug)]
+/// Helper macro for creating PartialWriteLarge structs with minimal boilerplate
+#[macro_export]
+macro_rules! partial_write_large {
+    ($start:expr, $end:expr, $new:expr) => {
+        PartialWriteLarge {
+            start_str: $start.to_string(),
+            end_str: $end.to_string(),
+            new_str: $new.to_string(),
+            context_lines: 2,
+            line_range: None,
+        }
+    };
+    ($start:expr, $end:expr, $new:expr, context: $ctx:expr) => {
+        PartialWriteLarge {
+            start_str: $start.to_string(),
+            end_str: $end.to_string(),
+            new_str: $new.to_string(),
+            context_lines: $ctx,
+            line_range: None,
+        }
+    };
+    ($start:expr, $end:expr, $new:expr, range: $range:expr) => {
+        PartialWriteLarge {
+            start_str: $start.to_string(),
+            end_str: $end.to_string(),
+            new_str: $new.to_string(),
+            context_lines: 2,
+            line_range: Some($range),
+        }
+    };
+}
+
+#[derive(Debug, Clone)]
 pub struct PartialWriteLarge {
     pub start_str: String,
     pub end_str: String,
     pub new_str: String,
     pub context_lines: usize,
+    pub line_range: Option<LineRange>,
 }
 
 #[derive(Debug)]

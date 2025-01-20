@@ -27,6 +27,7 @@ async fn test_overlapping_patterns() {
             end_str: format!("{}\n", end),
             new_str: "new\n".to_string(),
             context_lines: 1,
+            line_range: None,
         });
 
         let result = write_file(&file_path, operation, None).await;
@@ -52,6 +53,7 @@ START\n\
         end_str: "END\n".to_string(),
         new_str: "new\n".to_string(),
         context_lines: 1,
+        line_range: None,
     });
 
     let result = write_file(&file_path, operation, None).await;
@@ -77,6 +79,7 @@ END\n\
         end_str: "END\n".to_string(),
         new_str: "new\n".to_string(),
         context_lines: 1,
+        line_range: None,
     });
 
     let result = write_file(&file_path, operation, None).await;
@@ -103,6 +106,7 @@ async fn test_valid_patterns() {
             end_str: format!("{}\n", end),
             new_str: "new\n".to_string(),
             context_lines: 1,
+            line_range: None,
         });
 
         let result = write_file(&file_path, operation, None).await;

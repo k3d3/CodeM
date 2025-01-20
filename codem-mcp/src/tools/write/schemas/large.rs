@@ -25,6 +25,20 @@ pub fn schema() -> Value {
                 "type": "string",
                 "description": "New text to insert between start and end"
             },
+            "line_range": {
+                "type": "object",
+                "properties": {
+                    "start": {
+                        "type": ["integer", "null"],
+                        "description": "Starting line number (1-based, inclusive) to limit search range for start_str and end_str. If null, starts from beginning."
+                    },
+                    "end": {
+                        "type": ["integer", "null"],
+                        "description": "Ending line number (1-based, inclusive) to limit search range for start_str and end_str. If null, continues to end."
+                    }
+                },
+                "description": "Optional line range to limit where matches can occur"
+            },
             "run_test": {
                 "type": "boolean",
                 "description": "Whether to run tests after write. Highly recommended if this is the last write operation in a series.",

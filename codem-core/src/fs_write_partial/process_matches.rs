@@ -11,16 +11,21 @@ pub fn process_matches(
     let mut last_match_end_position = 0;
     let mut matches_out = Vec::new();
 
-    for match_info in matches {
+    // Sort matches by position to ensure we process them in order
+    let mut sorted_matches: Vec<_> = matches.iter().collect();
+    sorted_matches.sort_by_key(|m| m.relative_match_start);
+
+    for match_info in &sorted_matches {
         let pattern_index = match_info.pattern_index;
         let relative_match_start = match_info.relative_match_start;
         let write = &partial_writes.changes[pattern_index];
 
-        let preceding_text = &contents[last_match_end_position..last_match_end_position + relative_match_start];
+        let preceding_text = &contents[last_match_end_position..relative_match_start];
         output.push_str(preceding_text);
 
-        let match_pos = last_match_end_position + relative_match_start;
-        let line_num = super::line_map::find_line_number(line_map, match_pos).unwrap();
+        let match_pos = relative_match_start;
+        let line_num = super::line_map::find_line_number(line_map, match_pos)
+            .unwrap_or_else(|| panic!("No line number found for position {}", match_pos));
 
         let context = super::context::build_context_lines(
             lines,
@@ -42,7 +47,7 @@ pub fn process_matches(
             context,
         });
 
-        last_match_end_position += relative_match_start + write.old_str.len();
+        last_match_end_position = relative_match_start + write.old_str.len();
     }
 
     output.push_str(&contents[last_match_end_position..]);

@@ -129,6 +129,7 @@ impl Client {
             context_lines: 3,
             return_full_content: true,
             changes,
+            line_range: None,
         };
 
         let result = operations::handle_operation(
@@ -207,6 +208,7 @@ impl Client {
             end_str: end_str.to_string(),
             new_str: new_str.to_string(),
             context_lines: 3,
+            line_range: None,
         };
 
         let result = operations::handle_operation(

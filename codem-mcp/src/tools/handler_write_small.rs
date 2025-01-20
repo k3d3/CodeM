@@ -1,7 +1,7 @@
 use jsonrpc_stdio_server::jsonrpc_core::{Value, Result, Error};
 use crate::{server::Mcp, tools::write};
 use crate::tools::types::ToolCall;
-use codem_core::types::Change;
+use codem_core::types::{Change, LineRange};
 
 pub async fn handle_write_file_small(mcp: &Mcp, call: &ToolCall) -> Result<Value> {
     let session_id = call.arguments.get("session_id")
@@ -26,10 +26,28 @@ pub async fn handle_write_file_small(mcp: &Mcp, call: &ToolCall) -> Result<Value
                 .and_then(|v| v.as_str())
                 .ok_or_else(|| Error::invalid_params("missing new_str in change"))?;
 
+            let line_range = v.get("line_range").and_then(|v| {
+                if v.is_null() {
+                    None
+                } else {
+                    // Keep line numbers as 1-based since that's what codem-core expects
+                    let start = v.get("start")
+                        .and_then(|v| v.as_u64())
+                        .map(|n| n as usize);
+
+                    let end = v.get("end")
+                        .and_then(|v| v.as_u64())
+                        .map(|n| n as usize);
+
+                    Some(LineRange { start, end })
+                }
+            });
+
             Ok(Change {
                 old_str: old_str.to_string(),
                 new_str: new_str.to_string(),
                 allow_multiple_matches: v.get("allow_multiple_matches").and_then(|v| v.as_bool()).unwrap_or(false),
+                line_range,
             })
         })
         .collect();

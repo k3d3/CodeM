@@ -5,7 +5,13 @@ use serde_json::json;
 
 use crate::tools;
 
-/// MCP server state
+#[cfg(test)]
+use {
+    anyhow::Result as AnyhowResult,
+    std::{fs, path::Path},
+    tempfile::TempDir,
+};
+
 pub struct Mcp {
     pub(crate) client: Client,
 }

@@ -78,6 +78,7 @@ pub fn get_error_content(err: &ClientError) -> Option<&str> {
             _ => None,
         },
         ClientError::FileNotSynced { content } => content.as_deref(),
+        ClientError::FileModifiedSinceRead { content } => content.as_deref(),
         ClientError::TimestampMismatch { content, .. } => Some(content),
         ClientError::FileNotReadable { content, .. } => content.as_deref(),
         ClientError::FileNotRead { content, .. } => content.as_deref(),

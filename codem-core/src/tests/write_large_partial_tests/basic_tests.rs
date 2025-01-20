@@ -23,6 +23,7 @@ async fn test_basic_large_write(
         end_str: end_pattern.to_string(),
         new_str: "replaced".to_string(),
         context_lines,
+        line_range: None,
     });
 
     let result = write_file(&file_path, operation, None).await.unwrap();

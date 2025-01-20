@@ -21,6 +21,7 @@ async fn test_invalid_order(#[case] first: &str, #[case] second: &str) {
         end_str: format!("{}\n", first),
         new_str: "new\n".to_string(),
         context_lines: 1,
+        line_range: None,
     });
 
     let result = write_file(&file_path, operation, None).await;
@@ -45,6 +46,7 @@ async fn test_overlapping_patterns(#[case] start: &str, #[case] end: &str) {
         end_str: format!("{}\n", end),
         new_str: "new\n".to_string(),
         context_lines: 1,
+        line_range: None,
     });
 
     let result = write_file(&file_path, operation, None).await;

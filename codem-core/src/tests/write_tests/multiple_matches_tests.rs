@@ -14,10 +14,12 @@ async fn test_multiple_matches() {
     let operation = WriteOperation::Partial(PartialWrite {
         context_lines: 0,
         return_full_content: true,
+        line_range: None,
         changes: vec![Change {
             old_str: "Test".to_string(),
             new_str: "New".to_string(),
             allow_multiple_matches: true,
+            line_range: None,
         }],
     });
 

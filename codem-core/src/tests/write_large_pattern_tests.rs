@@ -20,6 +20,7 @@ async fn test_valid_patterns(#[case] start: &str, #[case] end: &str, #[case] con
         end_str: format!("{}\n", end),
         new_str: "new\n".to_string(),
         context_lines: 1,
+        line_range: None,
     });
 
     // Should succeed
@@ -42,6 +43,7 @@ async fn test_invalid_order(#[case] start: &str, #[case] end: &str, #[case] cont
         end_str: format!("{}\n", end),
         new_str: "new\n".to_string(),
         context_lines: 1,
+        line_range: None,
     });
 
     // Should return an error
@@ -66,6 +68,7 @@ async fn test_invalid_pattern_pairs(#[case] start: &str, #[case] end: &str) {
         end_str: format!("{}\n", end),
         new_str: "new\n".to_string(),
         context_lines: 1,
+        line_range: None,
     });
 
     // Should error due to invalid pattern pairs
@@ -93,6 +96,7 @@ async fn test_content_preservation() {
         end_str: "END\n".to_string(),
         new_str: "REPLACED\n".to_string(),
         context_lines: 1,
+        line_range: None,
     });
 
     let _result = write_file(&file_path, operation, None).await.unwrap();

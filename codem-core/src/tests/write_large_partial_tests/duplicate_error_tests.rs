@@ -18,6 +18,7 @@ async fn test_duplicate_patterns() {
         end_str: "END\n".to_string(),
         new_str: "new\n".to_string(),
         context_lines: 1,
+        line_range: None,
     });
 
     let result = write_file(&file_path, operation, None).await;
@@ -32,6 +33,7 @@ async fn test_duplicate_patterns() {
         end_str: "END\n".to_string(),
         new_str: "new\n".to_string(),
         context_lines: 1,
+        line_range: None,
     });
 
     let result = write_file(&file_path, operation, None).await;

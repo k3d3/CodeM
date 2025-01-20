@@ -23,6 +23,7 @@ async fn test_pattern_wrong_order(#[case] start: &str, #[case] end: &str) {
         end_str: format!("{}\n", end),
         new_str: "new\n".to_string(),
         context_lines: 1,
+        line_range: None,
     });
 
     let result = write_file(&file_path, operation, None).await;
