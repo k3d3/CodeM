@@ -12,6 +12,7 @@ pub mod handler_read;
 pub mod handler_write_small;
 pub mod handler_command;
 
+// Export the key types and functions
 pub use types::ToolCall;
 pub use tools_list::list_tools;
 pub use handler::handle_tool_call;

@@ -23,7 +23,7 @@ impl From<DirectoryError> for ClientError {
     fn from(err: DirectoryError) -> Self {
         match err {
             DirectoryError::IoError(e) => ClientError::IoError(e),
-            DirectoryError::RegexError(e) => ClientError::InvalidPath { 
+            DirectoryError::RegexError(_e) => ClientError::InvalidPath { 
                 path: PathBuf::from("Invalid regex pattern in file filter") 
             },
         }

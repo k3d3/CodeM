@@ -41,7 +41,10 @@ pub enum WriteResultDetails {
     None,
     Partial(PartialWriteResult),
     PartialLarge(PartialWriteLargeResult),
-    WithTestOutput(String),
+    WithTestOutput {
+        output: String,
+        details: Box<WriteResultDetails>,
+    },
 }
 
 #[derive(Debug)]

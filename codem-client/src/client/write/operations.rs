@@ -33,7 +33,10 @@ pub(crate) async fn handle_operation(
     // Run test command if requested
     if run_test {
         let test_output = run_test_command(&session).await?;
-        result.details = WriteResultDetails::WithTestOutput(test_output);
+        result.details = WriteResultDetails::WithTestOutput {
+            output: test_output,
+            details: Box::new(result.details)
+        };
     }
 
     Ok(result)
@@ -68,7 +71,10 @@ pub(crate) async fn handle_new_file(
     // Run test command if requested
     if run_test {
         let test_output = run_test_command(&session).await?;
-        result.details = WriteResultDetails::WithTestOutput(test_output);
+        result.details = WriteResultDetails::WithTestOutput {
+            output: test_output,
+            details: Box::new(result.details)
+        };
     }
 
     Ok(result)

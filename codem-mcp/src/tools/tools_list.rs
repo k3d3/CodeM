@@ -33,7 +33,7 @@ pub fn list_tools() -> Value {
             {
                 "name": "write_new_file",
                 "description": "Create a new file with the specified content",
-                "inputSchema": write::schemas::write_new_file_schema()
+                "inputSchema": write::write_new_file_schema()
             },
             {
                 "name": "write_file_full",

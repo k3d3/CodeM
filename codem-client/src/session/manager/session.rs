@@ -64,19 +64,30 @@ impl Session {
     }
 
     pub async fn get_timestamp(&self, path: &Path) -> Result<SystemTime, ClientError> {
-        // Read file content first so we have it for potential error case
+        // Try to read file content for error case
         let file_content = fs::read_to_string(path).await.ok();
         
         let metadata = self.metadata.lock().await;
-        metadata.get_timestamp(&self.id, path).map_err(|e| {
-            if let ClientError::FileNotSynced { .. } = e {
-                ClientError::FileNotSynced { 
-                    content: file_content
+        match metadata.get_timestamp(&self.id, path) {
+            Ok(timestamp) => Ok(timestamp),
+            Err(ClientError::FileNotSynced { .. }) => {
+                // Drop the lock before doing the fs operations
+                drop(metadata);
+                
+                // If file exists, update its timestamp
+                if let Ok(metadata) = fs::metadata(path).await {
+                    if let Ok(timestamp) = metadata.modified() {
+                        self.update_timestamp(path, timestamp).await?;
+                    }
                 }
-            } else {
-                e
-            }
-        })
+
+                // Return FileNotSynced to allow writing
+                Err(ClientError::FileNotSynced { 
+                    content: file_content
+                })
+            },
+            Err(e) => Err(e)
+        }
     }
 
     pub async fn update_timestamp(&self, path: &Path, timestamp: SystemTime) -> Result<(), ClientError> {
