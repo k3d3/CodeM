@@ -7,7 +7,7 @@ pub fn list_tools() -> Value {
         "tools": [
             {
                 "name": "create_session",
-                "description": "Create a new Codem session for a project. This is needed for all other commands.",
+                "description": "Create a new Codem session for a project, as well as run a test command, grep the codebase, or list a directory. The session ID returned from this tool is needed for all other tools.",
                 "inputSchema": session::create_session_schema()
             },
             {

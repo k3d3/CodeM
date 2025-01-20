@@ -34,7 +34,7 @@ pub fn schema() -> Value {
                     },
                     "required": ["old_str", "new_str"]
                 },
-                "description": "List of changes to make - each specifies old text to find and new text to replace it with"
+                "description": "List of changes to make - each specifies old text to find and new text to replace it with. YOU MUST WRITE `old_str` BEFORE YOU WRITE `new_str`."
             },
             "run_test": {
                 "type": "boolean",
