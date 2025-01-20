@@ -68,15 +68,35 @@ impl Session {
         let file_content = fs::read_to_string(path).await.ok();
         
         let metadata = self.metadata.lock().await;
-        match metadata.get_timestamp(&self.id, path) {
-            Ok(timestamp) => Ok(timestamp),
+        
+        // First check if we have a recorded timestamp
+        let session_timestamp = metadata.get_timestamp(&self.id, path);
+        
+        match session_timestamp {
+            // We have a timestamp recorded
+            Ok(recorded_timestamp) => {
+                // Check if the file still exists and compare timestamps
+                if let Ok(fs_metadata) = fs::metadata(path).await {
+                    if let Ok(current_timestamp) = fs_metadata.modified() {
+                        if current_timestamp != recorded_timestamp {
+                            // File was modified since last read
+                            return Err(ClientError::FileModifiedSinceRead { 
+                                content: file_content
+                            });
+                        }
+                    }
+                }
+                Ok(recorded_timestamp)
+            },
+            
+            // No timestamp recorded yet
             Err(ClientError::FileNotSynced { .. }) => {
                 // Drop the lock before doing the fs operations
                 drop(metadata);
                 
                 // If file exists, update its timestamp
-                if let Ok(metadata) = fs::metadata(path).await {
-                    if let Ok(timestamp) = metadata.modified() {
+                if let Ok(fs_metadata) = fs::metadata(path).await {
+                    if let Ok(timestamp) = fs_metadata.modified() {
                         self.update_timestamp(path, timestamp).await?;
                     }
                 }
@@ -86,6 +106,8 @@ impl Session {
                     content: file_content
                 })
             },
+            
+            // Other errors
             Err(e) => Err(e)
         }
     }

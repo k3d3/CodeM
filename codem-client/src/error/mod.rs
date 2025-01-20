@@ -46,8 +46,12 @@ error_set! {
         CommandError(CommandError),
         #[display("Session not found: {id}")]
         SessionNotFound { id: String },
-        #[display("Attempted to write to a file was not previously read in this session. The file contents have now been read and are below, so you can try writing again.")]
+        #[display("Attempted to write to a file that was not previously read in this session. The file contents have now been read and are below, so you can try writing again.")]
         FileNotSynced {
+            content: Option<String>,
+        },
+        #[display("The file has been modified since it was last read in this session. The current contents are shown below, so you can try writing again.")]
+        FileModifiedSinceRead {
             content: Option<String>,
         },
         #[display("Path not in project scope: {}", path.to_string_lossy())]

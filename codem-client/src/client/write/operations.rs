@@ -26,11 +26,15 @@ pub(crate) async fn handle_operation(
     session.get_timestamp(&absolute_path).await?;
 
     // Perform the write operation
-    let mut result = write_file(&absolute_path, operation, None)
-        .await
-        .map_err(ClientError::WriteError)?;
+    let mut result = match write_file(&absolute_path, operation, None).await {
+        Ok(result) => result,
+        Err(e) => return Err(ClientError::WriteError(e))
+    };
 
-    // Run test command if requested
+    // Update session's timestamp tracking with the new timestamp
+    session.update_timestamp(&absolute_path, result.modified).await?;
+
+    // Only run test command if write succeeded
     if run_test {
         let test_output = run_test_command(&session).await?;
         result.details = WriteResultDetails::WithTestOutput {
@@ -59,16 +63,20 @@ pub(crate) async fn handle_new_file(
     client.sessions.check_path(session_id, &absolute_path).await?;
 
     // Create the new file
-    let mut result = write_new_file(&absolute_path, content)
-        .await
-        .map_err(|e| match e {
+    let mut result = match write_new_file(&absolute_path, content).await {
+        Ok(result) => result,
+        Err(e) => return Err(match e {
             codem_core::WriteError::FileExists { content } => ClientError::WriteError(
                 codem_core::WriteError::FileExists { content }
             ),
             other => ClientError::WriteError(other)
-        })?;
+        })
+    };
 
-    // Run test command if requested
+    // Update session's timestamp tracking with the new file's timestamp
+    session.update_timestamp(&absolute_path, result.modified).await?;
+
+    // Only run test command if write succeeded
     if run_test {
         let test_output = run_test_command(&session).await?;
         result.details = WriteResultDetails::WithTestOutput {
