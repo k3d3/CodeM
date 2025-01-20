@@ -1,7 +1,7 @@
 use crate::error::ClientError;
 use codem_core::{
     fs_write::{write_file, write_new_file},
-    types::{WriteOperation, WriteResult},
+    types::{WriteOperation, WriteResult, WriteResultDetails},
     command::run_command
 };
 use std::path::Path;
@@ -26,13 +26,14 @@ pub(crate) async fn handle_operation(
     session.get_timestamp(&absolute_path).await?;
 
     // Perform the write operation
-    let result = write_file(&absolute_path, operation, None)
+    let mut result = write_file(&absolute_path, operation, None)
         .await
         .map_err(ClientError::WriteError)?;
 
     // Run test command if requested
     if run_test {
-        run_test_command(&session).await?;
+        let test_output = run_test_command(&session).await?;
+        result.details = WriteResultDetails::WithTestOutput(test_output);
     }
 
     Ok(result)
@@ -55,7 +56,7 @@ pub(crate) async fn handle_new_file(
     client.sessions.check_path(session_id, &absolute_path).await?;
 
     // Create the new file
-    let result = write_new_file(&absolute_path, content)
+    let mut result = write_new_file(&absolute_path, content)
         .await
         .map_err(|e| match e {
             codem_core::WriteError::FileExists { content } => ClientError::WriteError(
@@ -66,13 +67,14 @@ pub(crate) async fn handle_new_file(
 
     // Run test command if requested
     if run_test {
-        run_test_command(&session).await?
+        let test_output = run_test_command(&session).await?;
+        result.details = WriteResultDetails::WithTestOutput(test_output);
     }
 
     Ok(result)
 }
 
-async fn run_test_command(session: &crate::session::manager::session::Session) -> Result<(), ClientError> {
+async fn run_test_command(session: &crate::session::manager::session::Session) -> Result<String, ClientError> {
     let test_cmd = session.project.test_command.as_ref().ok_or(ClientError::TestCommandNotConfigured)?;
 
     let output = run_command(test_cmd, Some(&session.project.base_path), None).await
@@ -84,5 +86,17 @@ async fn run_test_command(session: &crate::session::manager::session::Session) -
         });
     }
 
-    Ok(())
+    // Combine stdout and stderr like in command.rs
+    let mut combined = String::new();
+    if !output.stdout.is_empty() {
+        combined.push_str(&output.stdout);
+    }
+    if !output.stderr.is_empty() {
+        if !combined.is_empty() {
+            combined.push('\n');
+        }
+        combined.push_str(&output.stderr);
+    }
+
+    Ok(combined)
 }

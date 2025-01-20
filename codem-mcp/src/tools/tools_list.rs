@@ -42,7 +42,7 @@ pub fn list_tools() -> Value {
             },
             {
                 "name": "write_file_small", 
-                "description": "Make small text replacements in a file. The old_str argument must be unique in the file, unless you set allow_multiple_matches to true.",
+                "description": "Make one or more small text changes in a file. For each change, the old_str argument must be unique in the file, unless you set allow_multiple_matches to true.",
                 "inputSchema": write::write_file_small_schema()
             },
             {

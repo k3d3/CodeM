@@ -41,6 +41,7 @@ pub enum WriteResultDetails {
     None,
     Partial(PartialWriteResult),
     PartialLarge(PartialWriteLargeResult),
+    WithTestOutput(String),
 }
 
 #[derive(Debug)]

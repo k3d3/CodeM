@@ -5,7 +5,7 @@ pub use config_error::ConfigError;
 
 use std::{path::PathBuf, time::SystemTime};
 use error_set::error_set;
-use codem_core::error::{WriteError, CommandError};
+use codem_core::error::{WriteError, CommandError, DirectoryError};
 
 use crate::session::manager::path::PathValidator;
 
@@ -16,6 +16,17 @@ pub trait ToRelativePath {
 impl ToRelativePath for PathBuf {
     fn to_relative_display(&self, validator: &PathValidator) -> String {
         validator.to_relative_path(self).display().to_string()
+    }
+}
+
+impl From<DirectoryError> for ClientError {
+    fn from(err: DirectoryError) -> Self {
+        match err {
+            DirectoryError::IoError(e) => ClientError::IoError(e),
+            DirectoryError::RegexError(e) => ClientError::InvalidPath { 
+                path: PathBuf::from("Invalid regex pattern in file filter") 
+            },
+        }
     }
 }
 

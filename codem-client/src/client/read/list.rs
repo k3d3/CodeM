@@ -1,5 +1,5 @@
 use std::path::Path;
-use codem_core::types::TreeEntry;
+use codem_core::{types::TreeEntry, error::DirectoryError};
 use crate::{Client, error::ClientError};
 
 impl Client {
@@ -27,7 +27,7 @@ impl Client {
         // List directory using codem_core
         let tree = codem_core::directory::list_directory(&absolute_path, &absolute_path, &options)
             .await
-            .map_err(ClientError::IoError)?;
+            .map_err(|e: DirectoryError| ClientError::from(e))?;
 
         Ok(tree)
     }

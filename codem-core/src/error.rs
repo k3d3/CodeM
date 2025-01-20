@@ -3,6 +3,13 @@ use error_set::error_set;
 use crate::types::CommandOutput;
 
 error_set! {
+    DirectoryError = {
+        #[display("Regex parsing error: {0}")]
+        RegexError(regex::Error),
+        #[display("IO error: {0}")]
+        IoError(std::io::Error),
+    };
+
     WriteError = {
         #[display("File already exists")]
         FileExists {

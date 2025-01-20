@@ -1,8 +1,8 @@
 use crate::types::{TreeEntry, ListOptions, FileMetadata};
+use crate::error::DirectoryError;
 use crate::fs_ops::is_in_git_dir;
 use super::stats::get_stats;
 use tokio::fs;
-use tokio::io;
 use std::path::Path;
 
 pub async fn process_directory(
@@ -13,7 +13,7 @@ pub async fn process_directory(
     matches: bool,
     options: &ListOptions,
     root: &mut TreeEntry,
-) -> io::Result<()> {
+) -> Result<(), DirectoryError> {
     // Skip .git directories
     if is_in_git_dir(relative_path) {
         return Ok(());
@@ -26,9 +26,8 @@ pub async fn process_directory(
         node.entry.symlink = is_symlink;
 
         if options.include_modified {
-            if let Ok(metadata) = fs::metadata(entry_path).await {
-                node.entry.modified = metadata.modified().ok();
-            }
+            let metadata = fs::metadata(entry_path).await.map_err(DirectoryError::IoError)?;
+            node.entry.modified = metadata.modified().ok();
         }
 
         node.entry.entry_type = "DIR".to_string();
@@ -66,7 +65,7 @@ pub async fn process_file(
     is_symlink: bool,
     options: &ListOptions,
     root: &mut TreeEntry,
-) -> io::Result<()> {
+) -> Result<(), DirectoryError> {
     // Skip files in .git directories
     if is_in_git_dir(relative_path) {
         return Ok(());
@@ -80,15 +79,14 @@ pub async fn process_file(
     node.entry.entry_type = "FILE".to_string();
 
     if options.include_size || options.include_modified || options.count_lines {
-        if let Ok(stats) = get_stats(entry_path, options.count_lines).await {
-            if options.include_size {
-                node.entry.size = stats.size;
-            }
-            if options.include_modified {
-                node.entry.modified = stats.modified;
-            }
-            node.entry.stats = Some(stats);
+        let stats = get_stats(entry_path, options.count_lines).await.map_err(DirectoryError::IoError)?;
+        if options.include_size {
+            node.entry.size = stats.size;
         }
+        if options.include_modified {
+            node.entry.modified = stats.modified;
+        }
+        node.entry.stats = Some(stats);
     }
 
     root.children.push(node);

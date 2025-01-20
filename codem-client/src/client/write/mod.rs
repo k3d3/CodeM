@@ -51,11 +51,8 @@ impl Client {
             // Update timestamp since we just read the file
             self.sessions.update_timestamp(session_id, &absolute_path, current_timestamp).await?;
 
-            return Err(ClientError::TimestampMismatch { 
-                path: absolute_path,
-                current_timestamp,
-                expected_timestamp: stored_timestamp,
-                content: current_content,
+            return Err(ClientError::FileNotSynced {
+                content: Some(current_content)
             });
         }
 
@@ -123,11 +120,8 @@ impl Client {
             // Update timestamp since we just read the file
             self.sessions.update_timestamp(session_id, &absolute_path, current_timestamp).await?;
 
-            return Err(ClientError::TimestampMismatch { 
-                path: absolute_path,
-                current_timestamp,
-                expected_timestamp: stored_timestamp,
-                content: current_content,
+            return Err(ClientError::FileNotSynced {
+                content: Some(current_content)
             });
         }
 
@@ -203,11 +197,8 @@ impl Client {
             // Update timestamp since we just read the file
             self.sessions.update_timestamp(session_id, &absolute_path, current_timestamp).await?;
 
-            return Err(ClientError::TimestampMismatch { 
-                path: absolute_path,
-                current_timestamp,
-                expected_timestamp: stored_timestamp,
-                content: current_content,
+            return Err(ClientError::FileNotSynced {
+                content: Some(current_content)
             });
         }
 
