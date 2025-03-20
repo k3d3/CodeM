@@ -1,7 +1,7 @@
 use clap::Parser;
-use std::{path::PathBuf, fs};
+use std::{path::PathBuf, fs, io};
 use anyhow::{Result, Context};
-use tracing::info;
+use tracing::{info, Level};
 use tracing_subscriber::{self, fmt::format::FmtSpan};
 
 mod error;
@@ -30,6 +30,8 @@ async fn main() -> Result<()> {
         .with_ansi(false)
         .with_span_events(FmtSpan::CLOSE)
         .without_time()
+        .with_writer(io::stderr)
+        .with_max_level(Level::DEBUG)
         .init();
 
     info!("Starting Codem MCP server");

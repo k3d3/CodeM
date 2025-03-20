@@ -1,12 +1,11 @@
-use crate::types::{TreeEntry, ListOptions, FileMetadata};
+use crate::types::{TreeEntry, ListOptions};
 use crate::error::DirectoryError;
-use crate::fs_ops::is_in_git_dir;
 use super::stats::get_stats;
 use tokio::fs;
 use std::path::Path;
 
-pub async fn process_directory(
-    base_path: &Path,
+pub async fn process_dir_entry(
+    _base_path: &Path,
     entry_path: &Path,
     relative_path: &Path,
     is_symlink: bool,
@@ -14,11 +13,6 @@ pub async fn process_directory(
     options: &ListOptions,
     root: &mut TreeEntry,
 ) -> Result<(), DirectoryError> {
-    // Skip .git directories
-    if is_in_git_dir(relative_path) {
-        return Ok(());
-    }
-
     if matches || options.recursive {
         let mut node = TreeEntry::default();
         node.entry.path = relative_path.to_path_buf();
@@ -31,51 +25,22 @@ pub async fn process_directory(
         }
 
         node.entry.entry_type = "DIR".to_string();
-
-        if options.recursive {
-            let subdir_entry = Box::pin(super::list::list_directory(base_path, entry_path, options)).await?;
-            node.children = subdir_entry.children;
-            
-            // Total up line counts from children
-            if options.count_lines {
-                let mut total_lines = 0;
-                for child in &node.children {
-                    if let Some(stats) = &child.entry.stats {
-                        if let Some(lines) = stats.line_count {
-                            total_lines += lines;
-                        }
-                    }
-                }
-                node.entry.stats = Some(FileMetadata {
-                    line_count: Some(total_lines),
-                    size: None,
-                    modified: None,
-                });
-            }
-        }
-
         root.children.push(node);
     }
     Ok(())
 }
 
-pub async fn process_file(
+pub async fn process_file_entry(
     entry_path: &Path,
     relative_path: &Path,
     is_symlink: bool,
     options: &ListOptions,
     root: &mut TreeEntry,
 ) -> Result<(), DirectoryError> {
-    // Skip files in .git directories
-    if is_in_git_dir(relative_path) {
-        return Ok(());
-    }
-
     let mut node = TreeEntry::default();
     node.entry.path = relative_path.to_path_buf();
     node.entry.is_dir = false;
     node.entry.symlink = is_symlink;
-
     node.entry.entry_type = "FILE".to_string();
 
     if options.include_size || options.include_modified || options.count_lines {

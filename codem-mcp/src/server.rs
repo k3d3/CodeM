@@ -2,6 +2,7 @@ use std::sync::Arc;
 use codem_client::{Client, ClientConfig};
 use jsonrpc_stdio_server::jsonrpc_core::{IoHandler, Params, Result};
 use serde_json::json;
+use tracing::info;
 
 use crate::tools;
 
@@ -45,11 +46,13 @@ pub async fn serve(config: ClientConfig) -> Result<()> {
 
     // Register initialized notification
     io.add_notification("initialized", |_params: Params| {
+        info!("initialized notification");
         // No response needed for notifications
     });
 
     // Register tool listing
     io.add_method("tools/list", move |_params: Params| async move {
+        info!("LIST TOOLS");
         Ok(tools::list_tools())
     });
 

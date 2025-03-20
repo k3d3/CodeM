@@ -22,7 +22,7 @@ pub async fn run_command(
     cmd.stdout(Stdio::piped());
     cmd.stderr(Stdio::piped());
 
-    println!("running command: {:?}", cmd);
+    eprintln!("running command: {:?}", cmd);
     let mut child = cmd.spawn()?;
 
     let output = if let Some(timeout) = timeout_ms {
